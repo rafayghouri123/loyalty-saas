@@ -28,7 +28,7 @@ Local engineering proceeds with explicitly labelled fixtures. Missing live input
 | Product name, HTTPS domain and support contact | Yes | No | No |
 | Published privacy/terms/consent wording and versions | Yes | No | No |
 | Published plan prices/limits, real bank/provider IDs and payment instructions | Yes | No | No |
-| Isolated Supabase projects and Auth/email/OAuth configuration | Yes | Local connection and remote database configured; Google OAuth disabled | PostgreSQL 17.6 migrations/runtime grants/PostgREST verified; verified-user Auth flow pending |
+| Isolated Supabase projects and Auth/email/OAuth configuration | Yes | Local connection, remote database and Google OAuth enabled | PostgreSQL 17.6 migrations/runtime grants/PostgREST and Google authorization redirect verified; completed user sign-in pending |
 | Firebase web/VAPID and worker credentials | Yes | Yes, local test configuration | Google authentication, remote web-config match and FCM validation-only request passed; real device receipt pending |
 | Persistent worker host, region, SSL/pooling and spend estimate | Yes | No | No |
 | Production encryption/HMAC key IDs, rotation, admin bootstrap and MFA recovery | Yes | No | No |
@@ -55,7 +55,7 @@ Each screen needs layout, persistence, authorization, validation and meaningful 
 
 ## Phase 0 remaining verification
 
-1. **Real Supabase integration:** PostgreSQL 17.6 migrations, runtime-role/pooler grants, actual PostgREST readiness and anonymous denial now pass. Verified provider Auth/Google callback, JWT/session behavior and the authenticated RPC/outbox slice remain pending. Supabase Auth settings report Google OAuth disabled.
+1. **Real Supabase integration:** PostgreSQL 17.6 migrations, runtime-role/pooler grants, actual PostgREST readiness and anonymous denial now pass. Google OAuth is enabled and its authorization endpoint redirects to Google. Completed provider sign-in/callback, JWT/session behavior and the authenticated RPC/outbox slice remain pending.
 2. **Real FCM/browser integration:** Firebase credentials are configured and provider authentication/dry-run authorization passed. Still verify the custom root service-worker foreground receipt path, Android/iPhone installation and shared-device/logout behavior. Local SQL capture, dry-run validation and service-worker tests are not device delivery proof.
 3. **Hosted configuration evidence:** controlled Vercel preview ingress spoofing test, private caching, separately supervised worker and final environment/runbook evidence for the Phase 0 slice. Detailed steps are in `docs/development-runbook.md`; hosting has not been provisioned or verified. Region benchmarking remains an explicit later release gate.
 
@@ -66,6 +66,8 @@ The local API/worker implementation, shared limiter, browser safeguards and stag
 User supplied local configuration and a service-account JSON file. Without printing keys, tokens, project identifiers or file contents, verified that the file exists and identifies the configured project; the VAPID public key has the expected uncompressed P-256 shape; Google service-account authentication succeeds; Firebase Management returned HTTP 200 and its web API key, app ID and messaging sender ID match the local values. Firebase Admin `send(message, true)` completed successfully using `validate_only`; no message was delivered or queued for customers. The VAPID key's project association and actual browser registration/receipt remain unverified. Both live enable flags were left unchanged. No credentials were added to Git.
 
 ## Supabase setup verification (2026-09-14)
+
+Subsequent Google configuration check: after the user saved the provider settings, Auth settings returned Google enabled and the authorization endpoint returned HTTP 302 to accounts.google.com, with a client ID and the matching Supabase provider callback. No user sign-in was completed by this check; Google consent/client configuration, app return URL acceptance and a real authenticated session still require the interactive flow.
 
 The supplied migration URL matches the configured public Supabase project. Initial audit found zero application tables and zero Auth users. PostgreSQL is 17.6. Default Node trust failed with SELF_SIGNED_CERT_IN_CHAIN; downloaded the CA from the HTTPS URL published in Supabase's official Studio source and successfully verified the certificate chain and hostname. TLS verification remains enabled.
 
