@@ -27,4 +27,28 @@ test('unconfigured private pages never show fabricated memberships or healthy re
   expect(await manifest.json()).toMatchObject({id:'/',start_url:'/app',scope:'/',display:'standalone'});
   const serviceWorker=await request.get('/sw.js');
   expect(serviceWorker.headers()['cache-control']).toContain('must-revalidate');
+  for(const path of ['/api/push/register','/api/push/acknowledge','/api/push/revoke','/api/auth/logout']) {
+    const response=await request.post(path,{data:{}});
+    expect(response.status()).toBe(503);expect(response.headers()['cache-control']).toContain('no-store');
+  }
+});
+
+test('entering sign-in clears the previous account binding from real browser storage',async({page})=>{
+  await page.goto('/');
+  await page.evaluate(async()=>{
+    const db=await new Promise<IDBDatabase>((resolve,reject)=>{
+      const request=indexedDB.open('loyalty-device-v1',1);request.onupgradeneeded=()=>request.result.createObjectStore('state');
+      request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);
+    });
+    await new Promise<void>((resolve,reject)=>{
+      const transaction=db.transaction('state','readwrite'),store=transaction.objectStore('state');
+      store.put({userId:'previous-fixture-account',installationId:crypto.randomUUID(),bindingGeneration:crypto.randomUUID()},'binding');store.put('previous-epoch','epoch');
+      transaction.oncomplete=()=>resolve();transaction.onerror=()=>reject(transaction.error);
+    });db.close();
+  });
+  await page.goto('/auth/login');
+  await expect.poll(()=>page.evaluate(async()=>{
+    const db=await new Promise<IDBDatabase>((resolve,reject)=>{const request=indexedDB.open('loyalty-device-v1',1);request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});
+    try{return await new Promise<boolean>((resolve,reject)=>{const request=db.transaction('state').objectStore('state').get('binding');request.onsuccess=()=>resolve(request.result===undefined);request.onerror=()=>reject(request.error);});}finally{db.close();}
+  })).toBe(true);
 });

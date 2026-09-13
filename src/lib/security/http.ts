@@ -12,6 +12,12 @@ export function failure(code: ErrorCode, message: string, correlationId: string,
     { status: errorStatus[code], headers: PRIVATE_HEADERS });
 }
 
+export function rateLimited(retryAfterSeconds: number, correlationId: string) {
+  const seconds = Math.max(1, Math.ceil(retryAfterSeconds));
+  return Response.json({ error: { code: 'rate_limited', message: 'Too many attempts. Please wait and try again.', retryAfterSeconds: seconds }, correlationId },
+    { status: 429, headers: { ...PRIVATE_HEADERS, 'Retry-After': String(seconds) } });
+}
+
 export function validMutationOrigin(request: Request, canonicalOrigin: string) {
   try {
     return request.headers.get('origin') === new URL(canonicalOrigin).origin

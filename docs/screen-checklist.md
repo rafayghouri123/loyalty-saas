@@ -6,7 +6,7 @@
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | P01 | Product landing page: `/` | Initial layout | Pricing not connected | Public only | Config fallbacks | Desktop/360px checks passed | `src/app/page.tsx`; published plans/policies pending |
 | P02 | Cafe page: `/b/[slug]` | Not started | Not started | Not started | Not started | Not started | Pending |
-| P03 | Login: `/auth/login` | Initial layout | OAuth boundary; email pending | Server origin checks; limiter pending | Strict intent | Provider tests pending | `/api/auth/google`; no role from intent; sender/limiter still required |
+| P03 | Login: `/auth/login` | Initial layout | OAuth boundary; email pending | Server origin checks; shared limiter boundary exists | Strict intent; previous device state cleared | Local storage clearing passed; provider tests pending | `/api/auth/google`; email action remains disabled until direct Auth bypass and sender configured |
 | P04 | Auth callback, invitation acceptance, and MFA | Name form only | `complete_profile` atomic | Own-profile RLS; verified Auth row | Unicode name + safe return path | SQL tests passed; real callback/MFA pending | profiles, audit_events, outbox_events; invite/MFA absent |
 | P05 | Enrollment: `/join/[slug]` | Not started | Not started | Not started | Not started | Not started | Pending |
 | P06 | Workspace selection: `/workspace` | Setup state only | Pending | Verified user boundary only | Pending | Pending | Workspaces/roles/onboarding pending |
@@ -16,7 +16,7 @@
 | C03 | Rewards and redemption intent: `/app/cards/[membershipId]/rewards` | Not started | Not started | Not started | Not started | Not started | Pending |
 | C04 | Offers: `/app/offers` and `/app/offers/[offerId]` | Not started | Not started | Not started | Not started | Not started | Pending |
 | C05 | Referrals: `/app/referrals` | Not started | Not started | Not started | Not started | Not started | Pending |
-| C06 | Account: `/app/settings` | Not started | Not started | Not started | Not started | Not started | Pending |
+| C06 | Account: `/app/settings` | Initial device settings at `/app/notifications`; full account pending | Push challenge/ack/revoke only | Same verified session | Strict device payloads; generation isolation | SQL/worker/clear-state checks passed; devices pending | push_devices, push_registration_challenges; birthday/preferences/export/deletion still pending |
 | C07 | Per-cafe preferences: `/app/cards/[membershipId]/preferences` | Not started | Not started | Not started | Not started | Not started | Pending |
 | S01 | Scan home: `/staff/[businessId]` | Not started | Not started | Not started | Not started | Not started | Pending |
 | S02 | Purchase form: `/staff/[businessId]/checkout` | Not started | Not started | Not started | Not started | Not started | Pending |

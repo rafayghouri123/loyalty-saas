@@ -50,7 +50,7 @@ Required tables from section 24. Fields/constraints, FKs, enums, grants/RLS, gen
 | campaign_versions | Pending | Pending | Pending | Pending | Pending | Pending |
 | campaign_branches | Pending | Pending | Pending | Pending | Pending | Pending |
 | campaign_recipients | Pending | Pending | Pending | Pending | Pending | Pending |
-| push_devices | Pending | Pending | Pending | Pending | Pending | Pending |
+| push_devices | Added; rotation pending | Private, no browser reads/writes | Receipt-bound activation | Same-session/rebind tested | Generated | Local tests; provider pending |
 | push_test_registrations | Pending | Pending | Pending | Pending | Pending | Pending |
 | delivery_attempts | Pending | Pending | Pending | Pending | Pending | Pending |
 | automation_rules | Pending | Pending | Pending | Pending | Pending | Pending |
@@ -73,8 +73,8 @@ Required tables from section 24. Fields/constraints, FKs, enums, grants/RLS, gen
 | idempotency_records | Pending | Pending | Pending | Pending | Pending | Pending |
 | outbox_events | 202609130001 | Initial versioned event/uniqueness | Optional business FK | Narrow worker functions only | Catalog generated | Atomic enqueue/rollback/recovery passed |
 | checkout_contexts | Pending | Pending | Pending | Pending | Pending | Pending |
-| push_registration_challenges | Pending | Pending | Pending | Pending | Pending | Pending |
-| rate_limit_buckets | Pending | Pending | Pending | Pending | Pending | Pending |
+| push_registration_challenges | Added with candidate/dispatch fields | Private; ack-only browser RPC | 5-minute/replacement/receipt gates | Wrong session/concurrent replay tested | Generated | Local tests; provider pending |
+| rate_limit_buckets | Added | No browser grants | Atomic fixed/cooldown gates | Concurrent/direct RPC tested | Generated | Worker cleanup tested; monitoring pending |
 | export_requests | Pending | Pending | Pending | Pending | Pending | Pending |
 | export_artifacts | Pending | Pending | Pending | Pending | Pending | Pending |
 | policy_documents | Pending | Pending | Pending | Pending | Pending | Pending |

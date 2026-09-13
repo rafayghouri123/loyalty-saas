@@ -1,4 +1,5 @@
-/* One coordinated worker; push handlers will be added to this registration. */
+/* One coordinated worker. FCM sends data-only Web Push to this exact registration. */
+importScripts('/push-protocol.js');
 const SHELL_CACHE='loyalty-shell-v1';
 const SHELL='/offline-v1.html';
 self.addEventListener('install',event=>event.waitUntil(caches.open(SHELL_CACHE).then(cache=>cache.add(SHELL))));
@@ -10,4 +11,51 @@ self.addEventListener('fetch',event=>{
     event.respondWith(fetch(event.request).catch(async()=>await caches.match(SHELL)||Response.error()));
   }
   // Never cache authenticated HTML, API responses, contacts, reports or mutations.
+});
+
+function pushState() {
+  return new Promise((resolve,reject)=>{
+    const request=indexedDB.open('loyalty-device-v1',1);
+    request.onupgradeneeded=()=>request.result.createObjectStore('state');
+    request.onsuccess=()=>resolve(request.result);
+    request.onerror=()=>reject(new Error('Device state unavailable.'));
+  });
+}
+async function readBinding() {
+  const database=await pushState();
+  try { return await new Promise((resolve,reject)=>{
+    const request=database.transaction('state').objectStore('state').get('binding');
+    request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(new Error('Device state unavailable.'));
+  }); } finally { database.close(); }
+}
+self.addEventListener('push',event=>{
+  event.waitUntil((async()=>{
+    let payload;
+    try { payload=event.data?.json(); } catch { return; }
+    // Reject notification payloads: the application owns preview and account-switch checks.
+    if(payload?.notification || !payload?.data) return;
+    const data=payload.data;
+    if(self.LoyaltyPushProtocol.challenge(data)) {
+      const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
+      for(const client of windows) if(client.visibilityState==='visible') client.postMessage({type:'loyalty-foreground-challenge',data});
+      return; // A background registration challenge never activates or displays a notification.
+    }
+    const binding=await readBinding();
+    if(!self.LoyaltyPushProtocol.matchesBinding(data,binding)) return;
+    await self.registration.showNotification('Cafe loyalty',{body:'Open the app to view your update.',icon:'/icons/icon-192-v1.png',
+      tag:`loyalty-${binding.bindingGeneration}`,data:{bindingGeneration:binding.bindingGeneration}});
+    const latest=await readBinding();
+    if(!self.LoyaltyPushProtocol.matchesBinding(data,latest)) {
+      const notifications=await self.registration.getNotifications({tag:`loyalty-${binding.bindingGeneration}`});
+      notifications.forEach(notification=>notification.close());
+    }
+  })().catch(()=>{}));
+});
+self.addEventListener('notificationclick',event=>{
+  event.notification.close();
+  event.waitUntil((async()=>{
+    const binding=await readBinding();
+    if(!binding || binding.bindingGeneration!==event.notification.data?.bindingGeneration) return;
+    await self.clients.openWindow('/app');
+  })().catch(()=>{}));
 });

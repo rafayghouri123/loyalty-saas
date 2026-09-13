@@ -6,6 +6,8 @@ import { mkdirSync, readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { createServer } from 'node:net';
 import { generateDbTypes } from './generate-db-types.mjs';
+import { testRateLimits } from './test-rate-limits.mjs';
+import { testPushChallenges } from './test-push-challenges.mjs';
 
 const {startWorker}=await import('../src/worker/runtime.ts');
 const base=resolve('.local/integration');
@@ -20,6 +22,7 @@ const password=randomBytes(24).toString('hex');
 const postgres=new EmbeddedPostgres({databaseDir:directory,port,user:'postgres',password,authMethod:'scram-sha-256',persistent:true,createPostgresUser:false,initdbFlags:['--encoding=UTF8','--locale=C'],postgresFlags:['-h','127.0.0.1'],onLog:()=>{},onError:()=>{}});
 let client;let worker;
 const passed=[];
+const pushKey={id:'integration-v1',bytes:randomBytes(32)},pushMessages=[];
 const test=async(name,action)=>{await action();passed.push(name);console.log(`PASS ${name}`);};
 try{
   await postgres.initialise();await postgres.start();
@@ -28,7 +31,9 @@ try{
   await client.query(`create role anon nologin;create role authenticated nologin;
     create schema auth;
     create table auth.users(id uuid primary key,email_confirmed_at timestamptz,is_anonymous boolean default false,deleted_at timestamptz);
+    create table auth.sessions(id uuid primary key,user_id uuid not null references auth.users(id),not_after timestamptz);
     create function auth.uid() returns uuid language sql stable as 'select nullif(current_setting(''request.jwt.claim.sub'',true),'''')::uuid';
+    create function auth.jwt() returns jsonb language sql stable as 'select coalesce(nullif(current_setting(''request.jwt.claims'',true),''''),''{}'')::jsonb';
     grant usage on schema auth,public to anon,authenticated;
     grant execute on function auth.uid() to anon,authenticated;`);
   for(const migration of readdirSync('supabase/migrations').filter(v=>v.endsWith('.sql')).sort()) await client.query(readFileSync(`supabase/migrations/${migration}`,'utf8'));
@@ -87,11 +92,13 @@ try{
     await assert.rejects(client.query("update public.audit_events set action='changed'"),{code:'42501'});
   });
   await client.query(`create role integration_worker login password '${password}' inherit;grant loyalty_worker to integration_worker;`);
+  await testRateLimits({ client, postgres, asUser, test, actor: a, password, port });
   const workerUrl=`postgresql://integration_worker:${password}@127.0.0.1:${port}/postgres`;
   const errors=[];
   await test('failed outbox marking rolls back its durable pg-boss enqueue',async()=>{
     await client.query("create function public.integration_fail_dispatch() returns trigger language plpgsql as $$ begin raise exception 'injected_dispatch_failure'; end $$;create trigger integration_fail_dispatch before update on public.outbox_events for each row execute function public.integration_fail_dispatch()");
-    worker=await startWorker({connectionString:workerUrl,ssl:false,onError:code=>errors.push(code)});
+    worker=await startWorker({connectionString:workerUrl,ssl:false,onError:code=>errors.push(code),
+      challengeSender:{key:id=>{assert.equal(id,pushKey.id);return pushKey;},send:async message=>{pushMessages.push(message);}}});
     const deadline=Date.now()+10_000;
     while(!errors.includes('outbox_dispatch_failed')&&Date.now()<deadline)await new Promise(resolve=>setTimeout(resolve,100));
     assert.ok(errors.includes('outbox_dispatch_failed'));
@@ -120,6 +127,7 @@ try{
     await assert.rejects(client.query('select public.worker_observe_profile($1)',[bad.id]),{code:'22023'});
   });
   await generateDbTypes(client);
+  await testPushChallenges({client,postgres,test,users:[a,b,c],password,port,key:pushKey,messages:pushMessages});
   console.log(`Integration: ${passed.length} checks passed. Auth adapter is SQL-only; provider integration remains pending.`);
 }finally{
   if(worker)await worker.stop();

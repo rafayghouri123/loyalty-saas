@@ -390,11 +390,157 @@ Relationships: [
 { foreignKeyName: "profiles_auth_user_id_fkey"; columns: ["auth_user_id"]; referencedRelation: "users"; referencedColumns: ["id"]; isOneToOne: false }
 ];
 };
+"push_devices": {
+Row: {
+"id": string;
+"customer_user_id": string;
+"installation_id": string;
+"binding_generation": string;
+"token_ciphertext": string;
+"encryption_key_id": string;
+"token_hash": string;
+"status": string;
+"last_seen_at": string;
+"revoked_at": string | null;
+"browser_label": string | null;
+"created_at": string;
+"updated_at": string;
+"row_version": number;
+};
+Insert: {
+"id"?: string;
+"customer_user_id": string;
+"installation_id": string;
+"binding_generation"?: string;
+"token_ciphertext": string;
+"encryption_key_id": string;
+"token_hash": string;
+"status"?: string;
+"last_seen_at"?: string;
+"revoked_at"?: string | null;
+"browser_label"?: string | null;
+"created_at"?: string;
+"updated_at"?: string;
+"row_version"?: number;
+};
+Update: {
+"id"?: string;
+"customer_user_id"?: string;
+"installation_id"?: string;
+"binding_generation"?: string;
+"token_ciphertext"?: string;
+"encryption_key_id"?: string;
+"token_hash"?: string;
+"status"?: string;
+"last_seen_at"?: string;
+"revoked_at"?: string | null;
+"browser_label"?: string | null;
+"created_at"?: string;
+"updated_at"?: string;
+"row_version"?: number;
+};
+Relationships: [
+{ foreignKeyName: "push_devices_customer_user_id_fkey"; columns: ["customer_user_id"]; referencedRelation: "profiles"; referencedColumns: ["user_id"]; isOneToOne: false },
+{ foreignKeyName: "push_devices_installation_id_fkey"; columns: ["installation_id"]; referencedRelation: "push_installations"; referencedColumns: ["id"]; isOneToOne: false }
+];
+};
+"push_registration_challenges": {
+Row: {
+"id": string;
+"customer_user_id": string;
+"auth_session_id": string;
+"installation_id": string;
+"push_device_id": string;
+"nonce_hash": string;
+"nonce_ciphertext": string;
+"encryption_key_id": string;
+"binding_generation": string;
+"expires_at": string;
+"consumed_at": string | null;
+"canceled_at": string | null;
+"dispatch_state": string;
+"created_at": string;
+};
+Insert: {
+"id"?: string;
+"customer_user_id": string;
+"auth_session_id": string;
+"installation_id": string;
+"push_device_id": string;
+"nonce_hash": string;
+"nonce_ciphertext": string;
+"encryption_key_id": string;
+"binding_generation"?: string;
+"expires_at"?: string;
+"consumed_at"?: string | null;
+"canceled_at"?: string | null;
+"dispatch_state"?: string;
+"created_at"?: string;
+};
+Update: {
+"id"?: string;
+"customer_user_id"?: string;
+"auth_session_id"?: string;
+"installation_id"?: string;
+"push_device_id"?: string;
+"nonce_hash"?: string;
+"nonce_ciphertext"?: string;
+"encryption_key_id"?: string;
+"binding_generation"?: string;
+"expires_at"?: string;
+"consumed_at"?: string | null;
+"canceled_at"?: string | null;
+"dispatch_state"?: string;
+"created_at"?: string;
+};
+Relationships: [
+{ foreignKeyName: "push_registration_challenges_customer_user_id_fkey"; columns: ["customer_user_id"]; referencedRelation: "profiles"; referencedColumns: ["user_id"]; isOneToOne: false },
+{ foreignKeyName: "push_registration_challenges_installation_id_fkey"; columns: ["installation_id"]; referencedRelation: "push_installations"; referencedColumns: ["id"]; isOneToOne: false },
+{ foreignKeyName: "push_registration_challenges_push_device_id_fkey"; columns: ["push_device_id"]; referencedRelation: "push_devices"; referencedColumns: ["id"]; isOneToOne: false }
+];
+};
+"rate_limit_buckets": {
+Row: {
+"subject_hash": string;
+"operation": string;
+"window_start": string;
+"window_seconds": number;
+"count": number;
+"expires_at": string;
+};
+Insert: {
+"subject_hash": string;
+"operation": string;
+"window_start": string;
+"window_seconds": number;
+"count": number;
+"expires_at": string;
+};
+Update: {
+"subject_hash"?: string;
+"operation"?: string;
+"window_start"?: string;
+"window_seconds"?: number;
+"count"?: number;
+"expires_at"?: string;
+};
+Relationships: [
+
+];
+};
 }; Views: { [_ in never]: never }; Functions: {
+"acknowledge_push_challenge": { Args: {"p_challenge_id": string;"p_installation_id": string;"p_nonce": string}; Returns: Json };
 "complete_profile": { Args: {"p_display_name": string;"p_correlation_id": string}; Returns: Json };
 "database_readiness": { Args: Record<string, never>; Returns: boolean };
+"gateway_limit_magic_link": { Args: {"p_email_subject": string;"p_ip_subject": string}; Returns: Json };
+"gateway_request_push_challenge": { Args: {"p_user": string;"p_session": string;"p_installation": string;"p_installation_secret_hash": string;"p_token_hash": string;"p_token_ciphertext": string;"p_key_id": string;"p_nonce_hash": string;"p_nonce_ciphertext": string}; Returns: Json };
+"revoke_push_installation": { Args: {"p_installation_id": string}; Returns: Json };
+"worker_claim_push_challenge": { Args: {"p_outbox_id": string}; Returns: Json };
+"worker_expire_push_challenges": { Args: Record<string, never>; Returns: number };
+"worker_finish_push_challenge": { Args: {"p_challenge_id": string;"p_state": string}; Returns: undefined };
 "worker_heartbeat": { Args: Record<string, never>; Returns: undefined };
 "worker_mark_dispatched": { Args: {"p_id": string}; Returns: undefined };
 "worker_observe_profile": { Args: {"p_outbox_id": string}; Returns: boolean };
 "worker_pending_outbox": { Args: Record<string, never>; Returns: Json[] };
+"worker_purge_rate_limits": { Args: Record<string, never>; Returns: number };
 }; Enums: { [_ in never]: never }; CompositeTypes: { [_ in never]: never }; } };

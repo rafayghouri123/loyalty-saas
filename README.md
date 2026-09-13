@@ -28,7 +28,7 @@ On another Windows machine, install the official Node 24.21.0 runtime or extract
 
 Copy `.env.example` to `.env.local` and fill values from an isolated test environment. Do not commit secrets or paste them in logs. Set `NEXT_PUBLIC_APP_URL` to the exact app origin. Supabase URL/publishable key identify the test Auth/database; OAuth callbacks must allow that origin's `/auth/callback`. Production/preview credentials and data must be separate.
 
-The independent worker uses `WORKER_DATABASE_URL`, a dedicated runtime login inheriting `loyalty_worker`, and verified TLS for remote databases. Migration/operator credentials must never be its runtime credential. Firebase web configuration and VAPID are public client identifiers; the worker service-account credential is private and referenced through `GOOGLE_APPLICATION_CREDENTIALS`. `LIVE_PUSH_ENABLED=false` is the default; the current foundation refuses live dispatch because challenge/delivery flows are still pending.
+The independent worker uses `WORKER_DATABASE_URL`, a dedicated runtime login inheriting `loyalty_worker`, and verified TLS for remote databases. The web secret gateway uses a separate `WEB_GATEWAY_DATABASE_URL` login inheriting only `loyalty_web_gateway`, through the provider transaction pooler on Vercel. Migration/operator credentials must never be runtime credentials. Firebase web configuration and VAPID are public client identifiers; the worker service-account credential is private and referenced through `GOOGLE_APPLICATION_CREDENTIALS`. Both `LIVE_PUSH_ENABLED` (worker) and `PUSH_REGISTRATION_ENABLED` (web) default to false. They enable only the registration challenge slice when deliberately configured; campaigns are not implemented.
 
 `PRODUCT_NAME` and `SUPPORT_EMAIL` are real operator inputs. Missing identity, plans, bank instructions and published policies remain explicit setup gates; no real prices or commercial details are fabricated. `setup:keys` generates local random keys without printing values. Production uses a secret store and a rotation runbook.
 
@@ -57,9 +57,9 @@ Install Playwright's Chromium browser with `npx.cmd playwright install chromium`
 
 - Next.js/TypeScript foundation, specified visual tokens, reusable primitives, initial public/auth/setup screens and profile form.
 - User-scoped Supabase SSR clients and verified-user boundary, with strict origin/body validation and private response headers.
-- First SQL migration: private profile, tenant/branch/access foundation, immutable audit, outbox and durable worker receipts. Profile creation is atomic and retry-safe.
+- Three SQL migrations: private profile, tenant/branch/access foundation, immutable audit, outbox, durable worker receipts, shared rate limits and receipt-bound push devices. Profile creation is atomic and retry-safe.
 - A separate pg-boss worker whose durable enqueue and outbox marker use the same PostgreSQL transaction. It validates authoritative event data and restricts runtime database privileges.
-- One PWA manifest/registration with generic offline shell; no caching of private responses. Push challenge/dispatch and customer offline summaries are not yet implemented.
+- One PWA manifest/registration with generic offline shell; no caching of private responses. Data-only foreground challenges, encrypted token storage, same-session acknowledgements, generation checks and sign-out revocation are implemented locally. `/app/notifications` is the initial authenticated device settings route. Real provider/device verification and customer offline summaries remain pending.
 
 The fixture Auth schema in the SQL harness does not prove Supabase JWT handling, Auth, PostgREST or Storage. The full two-cafe accounting seed, all financial features, 43 complete screens, push/WhatsApp, reporting, billing/privacy, deployment and launch hardening are still required. See [development runbook](docs/development-runbook.md) for the precise boundaries and local database strategy.
 

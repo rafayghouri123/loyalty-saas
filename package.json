@@ -11,7 +11,7 @@
     "start": "next start --hostname 127.0.0.1",
     "worker:start": "node --env-file-if-exists=.env.local dist/worker/worker/main.js",
     "lint": "eslint . --max-warnings=0",
-    "typecheck": "tsc --noEmit && tsc -p tsconfig.worker.json --noEmit",
+    "typecheck": "next typegen && tsc --noEmit && tsc -p tsconfig.worker.json --noEmit",
     "test": "vitest run --config vitest.config.ts",
     "test:integration": "node --import tsx --env-file-if-exists=.env.local scripts/test-integration.mjs",
     "test:e2e": "playwright test",
