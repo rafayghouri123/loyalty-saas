@@ -29,7 +29,7 @@ Local engineering proceeds with explicitly labelled fixtures. Missing live input
 | Published privacy/terms/consent wording and versions | Yes | No | No |
 | Published plan prices/limits, real bank/provider IDs and payment instructions | Yes | No | No |
 | Isolated Supabase projects and Auth/email/OAuth configuration | Yes | No | No |
-| Firebase web/VAPID and worker credentials | Yes | No | No |
+| Firebase web/VAPID and worker credentials | Yes | Yes, local test configuration | Google authentication, remote web-config match and FCM validation-only request passed; real device receipt pending |
 | Persistent worker host, region, SSL/pooling and spend estimate | Yes | No | No |
 | Production encryption/HMAC key IDs, rotation, admin bootstrap and MFA recovery | Yes | No | No |
 | Financial/audit retention, backup coverage and restore rehearsal | Yes | No | No |
@@ -55,11 +55,15 @@ Each screen needs layout, persistence, authorization, validation and meaningful 
 
 ## Phase 0 remaining verification
 
-1. **Real Supabase integration:** isolated provider Auth/Google callback, PostgREST/JWT/session behavior, migrated Supabase PostgreSQL 17, runtime-role/pooler grants and the atomic RPC/outbox slice. No credentials have been supplied.
-2. **Real FCM/browser integration:** configure the worker and Firebase web/VAPID credentials; verify the custom root service-worker foreground receipt path, Android/iPhone installation and shared-device/logout behavior. Local SQL capture and service-worker tests are not provider/device proof.
+1. **Real Supabase integration:** isolated provider Auth/Google callback, PostgREST/JWT/session behavior, migrated Supabase PostgreSQL 17, runtime-role/pooler grants and the atomic RPC/outbox slice. Public Supabase configuration is now present locally but has not been verified; WORKER_DATABASE_URL and WEB_GATEWAY_DATABASE_URL are missing.
+2. **Real FCM/browser integration:** Firebase credentials are configured and provider authentication/dry-run authorization passed. Still verify the custom root service-worker foreground receipt path, Android/iPhone installation and shared-device/logout behavior. Local SQL capture, dry-run validation and service-worker tests are not device delivery proof.
 3. **Hosted configuration evidence:** controlled Vercel preview ingress spoofing test, private caching, separately supervised worker and final environment/runbook evidence for the Phase 0 slice. Detailed steps are in `docs/development-runbook.md`; hosting has not been provisioned or verified. Region benchmarking remains an explicit later release gate.
 
 The local API/worker implementation, shared limiter, browser safeguards and staging runbook are now present. These three verification groups remain open; Phase 0 is not marked complete. Browser concurrency, complete encryption-key rotation, CSP, shared limiter coverage on all later domain RPCs, and the direct Auth magic-link bypass gate still need the relevant later implementation/release checks.
+
+## Firebase credential verification (2026-09-13)
+
+User supplied local configuration and a service-account JSON file. Without printing keys, tokens, project identifiers or file contents, verified that the file exists and identifies the configured project; the VAPID public key has the expected uncompressed P-256 shape; Google service-account authentication succeeds; Firebase Management returned HTTP 200 and its web API key, app ID and messaging sender ID match the local values. Firebase Admin `send(message, true)` completed successfully using `validate_only`; no message was delivered or queued for customers. The VAPID key's project association and actual browser registration/receipt remain unverified. Both live enable flags were left unchanged. No credentials were added to Git.
 
 ## Next work, preserving launch scope
 
