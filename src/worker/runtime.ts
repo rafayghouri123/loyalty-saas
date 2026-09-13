@@ -2,9 +2,10 @@ import { PgBoss } from 'pg-boss';
 import pg from 'pg';
 import { z } from 'zod';
 import { dispatchPushChallenge, type ChallengeSender } from './push-challenge.js';
+import { databaseTls } from '../lib/db/tls.js';
 
 const jobSchema=z.strictObject({outboxId:z.uuid()});
-type Settings={connectionString:string;ssl:boolean;onError?:(code:string)=>void;challengeSender?:ChallengeSender};
+type Settings={connectionString:string;ssl:boolean;caPath?:string;onError?:(code:string)=>void;challengeSender?:ChallengeSender};
 export async function startWorker(settings:Settings) {
   const databaseUrl=new URL(settings.connectionString);
   if(!['postgres:','postgresql:'].includes(databaseUrl.protocol)
@@ -12,7 +13,7 @@ export async function startWorker(settings:Settings) {
     ||(!settings.ssl&&!['localhost','127.0.0.1','[::1]'].includes(databaseUrl.hostname))) {
     throw new Error('Invalid worker database configuration.');
   }
-  const ssl=settings.ssl?{rejectUnauthorized:true}:false;
+  const ssl=databaseTls(settings.ssl,settings.caPath);
   const pool=new pg.Pool({connectionString:settings.connectionString,max:4,ssl,connectionTimeoutMillis:5000});
   const boss=new PgBoss({connectionString:settings.connectionString,max:4,ssl,schema:'pgboss',createSchema:false});
   const report=settings.onError??(()=>{});

@@ -12,6 +12,9 @@ do $$ begin
     create role loyalty_worker nologin nosuperuser nocreatedb nocreaterole noinherit nobypassrls;
   end if;
 end $$;
+-- Managed Supabase's operator is not a superuser. Explicit SET membership is
+-- required to assign the queue schema to the newly created worker role.
+grant loyalty_worker to current_user with set true;
 create schema if not exists pgboss authorization loyalty_worker;
 grant usage on schema public to loyalty_worker;
 

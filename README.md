@@ -48,6 +48,7 @@ The independent worker uses `WORKER_DATABASE_URL`, a dedicated runtime login inh
 | `db:start` / `db:stop` | Full local Supabase; Docker Desktop required |
 | `db:reset` | Apply migrations/seed to local Supabase only |
 | `db:types` | Generate official Supabase types from the running local stack |
+| `db:setup:staging` | Initialize the matching empty isolated Supabase project and create restricted runtime logins |
 | `setup:keys` | Generate ignored local security keys |
 | `dependencies:check` | Verify exact versions and peer graph; write version inventory |
 

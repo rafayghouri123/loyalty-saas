@@ -17,7 +17,7 @@ export function pushRegistrationConfigured() {
 
 export async function requestPushChallenge(input: { userId: string; sessionId: string; installationId: string; installationSecret: string; token: string }) {
   if (!pushRegistrationConfigured()) throw new Error('Push registration is not configured.');
-  gateway ??= createGateway({ connectionString: process.env.WEB_GATEWAY_DATABASE_URL!, ssl: process.env.WEB_GATEWAY_DB_SSL !== 'false' });
+  gateway ??= createGateway({ connectionString: process.env.WEB_GATEWAY_DATABASE_URL!, ssl: process.env.WEB_GATEWAY_DB_SSL !== 'false',caPath:process.env.DATABASE_CA_CERT_PATH });
   const key = { id: process.env.ENCRYPTION_KEY_ID!, bytes: parseSecretKey(process.env.ENCRYPTION_KEY_BASE64!) };
   const nonce = randomToken();
   const nonceHash = hashToken(nonce), tokenHash = hashToken(input.token);

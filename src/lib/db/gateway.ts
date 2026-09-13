@@ -1,5 +1,6 @@
 import pg from 'pg';
 import { z } from 'zod';
+import { databaseTls } from './tls';
 
 const decision = z.strictObject({ allowed: z.boolean(), retryAfterSeconds: z.number().int().min(0).max(3600) })
   .refine(value => value.allowed === (value.retryAfterSeconds === 0));
@@ -9,14 +10,14 @@ export type PushCandidate = { userId: string; sessionId: string; installationId:
 
 // Bounded, server-only operations. This role cannot read business/customer tables.
 // Use the provider transaction pooler for Vercel, and never migration/service-role credentials.
-export function createGateway(settings: { connectionString: string; ssl: boolean }) {
+export function createGateway(settings: { connectionString: string; ssl: boolean; caPath?:string }) {
   const url = new URL(settings.connectionString);
   if (!['postgres:', 'postgresql:'].includes(url.protocol)
     || [...url.searchParams.keys()].some(key => key.toLowerCase().startsWith('ssl'))
     || (!settings.ssl && !['localhost', '127.0.0.1', '[::1]'].includes(url.hostname))) {
     throw new Error('Invalid gateway database configuration.');
   }
-  const pool = new pg.Pool({ connectionString: settings.connectionString, ssl: settings.ssl ? { rejectUnauthorized: true } : false,
+  const pool = new pg.Pool({ connectionString: settings.connectionString, ssl: databaseTls(settings.ssl,settings.caPath),
     max: 2, connectionTimeoutMillis: 5000, idleTimeoutMillis: 10_000, statement_timeout: 5000, query_timeout: 7000 });
   pool.on('error', () => { /* Requests fail closed; never log connection strings or database error details. */ });
   let checked: Promise<void> | null = null;

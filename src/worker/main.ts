@@ -29,7 +29,7 @@ try {
         webpush:{headers:{TTL:String(message.ttlSeconds),Urgency:'high'}}});
     }};
   }
-  const worker=await startWorker({connectionString:config.data.WORKER_DATABASE_URL,ssl:config.data.WORKER_DB_SSL==='true',onError:log,challengeSender});
+  const worker=await startWorker({connectionString:config.data.WORKER_DATABASE_URL,ssl:config.data.WORKER_DB_SSL==='true',caPath:process.env.DATABASE_CA_CERT_PATH,onError:log,challengeSender});
   log('started');
   let stopping=false;
   const stop=async()=>{if(stopping)return;stopping=true;await worker.stop();log('stopped');};

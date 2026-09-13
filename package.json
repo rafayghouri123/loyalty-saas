@@ -19,6 +19,7 @@
     "db:start": "node scripts/db-local.mjs start",
     "db:reset": "node scripts/db-local.mjs reset",
     "db:stop": "node scripts/db-local.mjs stop",
+    "db:setup:staging": "node scripts/setup-staging.mjs",
     "setup:keys": "node scripts/setup-keys.mjs",
     "dependencies:check": "node scripts/check-dependencies.mjs"
   },
