@@ -1,0 +1,3 @@
+-- Local-only seed intentionally contains no real identity, plan price or payment data.
+-- Phase 2 will add the two complete fictional tenant/accounting fixtures.
+-- Foundation role tests create and roll back their own explicit auth/tenant fixtures.

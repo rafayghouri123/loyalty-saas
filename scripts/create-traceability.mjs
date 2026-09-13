@@ -1,0 +1,11 @@
+import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+const brief=readFileSync('LOYALTY_SAAS_IMPLEMENTATION_BRIEF.md','utf8');
+const screens=[...brief.matchAll(/^\*\*([PCS OA]\d{2}) — (.+?)\*\*$/gm)];
+if(screens.length!==43)throw new Error(`Expected 43 screen contracts, got ${screens.length}`);
+const path='docs/screen-checklist.md';
+if(existsSync(path))throw new Error('Preserve existing screen evidence; do not regenerate over it.');
+writeFileSync(path,'# Screen traceability\n\n43 required screen contracts from section 25. Not started means no completion claim. Shared routes do not reduce the field/action scope. Every screen must eventually link its operations, tables, permissions and positive/negative tests.\n\n| ID | Screen and routes | Layout | Persistence | Authorization | Validation | Tested | Operations / tables / evidence |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n'+screens.map(m=>`| ${m[1]} | ${m[2].replaceAll('|','\\|')} | Not started | Not started | Not started | Not started | Not started | Pending |`).join('\n')+'\n');
+const schema=brief.slice(brief.indexOf('### 24.2'),brief.indexOf('### 24.9'));
+const tables=[...schema.matchAll(/^\| ([a-z][a-z_]+) \|/gm)].map(m=>m[1]);
+writeFileSync('docs/schema-checklist.md','# Migration-to-brief checklist\n\nRequired tables from section 24. Fields/constraints, FKs, enums, grants/RLS, generated types and direct database tests must all be checked before a row can be complete. Circular references remain pending until validated FKs exist.\n\n| Table | Migration | Field/constraint match | Tenant FKs | RLS / grants | Generated types | Meaningful tests |\n| --- | --- | --- | --- | --- | --- | --- |\n'+tables.map(table=>`| ${table} | Pending | Pending | Pending | Pending | Pending | Pending |`).join('\n')+'\n');
+console.log(`Created traceability for ${screens.length} screens and ${tables.length} tables.`);
