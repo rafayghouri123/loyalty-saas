@@ -6,6 +6,7 @@ import { verifiedUser } from '@/lib/db/server';
 import { randomToken } from '@/lib/security/crypto';
 import { failure, PRIVATE_HEADERS, rateLimited, readSmallJson, validMutationOrigin } from '@/lib/security/http';
 import { pushRegistrationConfigured, requestPushChallenge } from '@/lib/push/server';
+import { registrationFailureCode } from '@/lib/push/diagnostics';
 
 export async function POST(request: Request) {
   const correlationId = randomUUID(), config = getPublicConfig();
@@ -29,5 +30,8 @@ export async function POST(request: Request) {
     const result = await requestPushChallenge({ userId: user.id, sessionId: session.data, installationId, installationSecret, token: input.token });
     if ('error' in result) return rateLimited(result.error.retryAfterSeconds,correlationId);
     return Response.json({ data: result, correlationId },{ headers: PRIVATE_HEADERS });
-  } catch { return failure('temporary_failure','Notifications could not be registered. Please retry.',correlationId); }
+  } catch (error) {
+    console.error(JSON.stringify({ event: 'push_registration_failed', correlationId, code: registrationFailureCode(error) }));
+    return failure('temporary_failure','Notifications could not be registered. Please retry.',correlationId);
+  }
 }
