@@ -23,7 +23,8 @@ export function createGateway(settings: { connectionString: string; ssl: boolean
   let checked: Promise<void> | null = null;
   const check = () => checked ??= pool.query<{ allowed: boolean }>(
     "select pg_has_role(current_user,'loyalty_web_gateway','member') and not rolsuper and not rolbypassrls and not rolcreaterole and not rolcreatedb as allowed from pg_roles where rolname=current_user"
-  ).then(result => { if (!result.rows[0]?.allowed) throw new Error('Dedicated web gateway role required.'); });
+  ).then(result => { if (!result.rows[0]?.allowed) throw new Error('Dedicated web gateway role required.'); })
+    .catch(error => { checked = null; throw error; });
   return {
     async requestPushChallenge(input: PushCandidate): Promise<unknown> {
       await check();
