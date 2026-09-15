@@ -4,12 +4,12 @@ Specification: `LOYALTY_SAAS_IMPLEMENTATION_BRIEF.md`, version 1.6. Read all 1,5
 
 ## Current milestone
 
-Phase 0 engineering acceptance is complete as of 2026-09-15; see [the requirement-by-requirement audit](phase-0-acceptance.md). The original repository contained only the brief and start prompt, both untracked; no application, dependency manifest, migrations, environment files, or commits existed. Original documents are preserved. The runnable foundation now has verified deployed Auth, real atomic profile/outbox processing and a real foreground Firebase challenge/acknowledgement. The application and launch remain incomplete; Phase 1 has not started beyond the original foundation primitives.
+Phase 0 engineering acceptance is complete as of 2026-09-15; see [the requirement-by-requirement audit](phase-0-acceptance.md). The original repository contained only the brief and start prompt, both untracked; no application, dependency manifest, migrations, environment files, or commits existed. Original documents are preserved. The runnable foundation now has verified deployed Auth, real atomic profile/outbox processing and a real foreground Firebase challenge/acknowledgement. Phase 1 is now in progress; the application and launch remain incomplete.
 
 | Phase | Required outcome | State | Evidence / remaining work |
 | --- | --- | --- | --- |
 | 0 | Audit, pinned stack, runnable web, auth/RPC/outbox/worker/push integration slice | Complete within Phase 0 scope | [Acceptance audit](phase-0-acceptance.md): pinned runtime/stack, documented setup/trust/cache boundaries, 22 unit tests, 23 real PostgreSQL/queue checks, fresh production build and 6 browser checks passed. Deployed Google login, real profile/outbox processing and Firebase foreground acknowledgement verified. Later release gates remain below. |
-| 1 | Design tokens, accessible primitives, all 43 screen contracts and shells | Initial primitives only | Public/auth/setup layouts exist. Broad screen work waits for the early integration boundary. No screen is fully complete. |
+| 1 | Design tokens, accessible primitives, all 43 screen contracts and shells | In progress after Phase 0 acceptance | Shared branded card component now used by the labelled public illustration. Role shells/scanner/forms and remaining screen contracts still required; no customer card persistence is claimed. |
 | 2 | Verified auth, MFA, onboarding, tenancy, invitations, enrollment, consent, storage | Foundation only | Own-profile RLS, verified-account SQL checks and composite branch FKs tested. Twelve public tables plus private security records and catalog-generated types exist; full model/roles/MFA/storage still pending. |
 | 3 | Transactional earn, secure intents, redemption, ledger, reversals, adjustments | Not started | Worked accounting fixture, concurrent writes and direct RPC tests required. |
 | 4 | Double slots and purchase-qualified referrals | Not started | Captured version terms, cap races, boundaries and compensating reversals required. |
@@ -37,6 +37,12 @@ Local engineering proceeds with explicitly labelled fixtures. Missing live input
 | Android and iPhone installation/camera/push/account-switch tests | Yes | No | No |
 | Singapore/Mumbai benchmark from Pakistani fixed/mobile networks | Yes | No | No |
 | Vercel preview ingress spoofing, CDN expiry and private no-store checks | Yes | No | No |
+
+## Phase 1 component evidence (2026-09-15)
+
+Started only after the Phase 0 acceptance audit closed. Added `LoyaltyCard` as a reusable presentational component for stamps/points, capped progress graphics with the original balance preserved in text, next reward title, server-controlled eligibility badge, optional logo/action slots and offline last-updated display. Merchant accent inputs are restricted to six-digit hex with a safe fallback, with black/white foreground selected for readable contrast. Stamp costs above 20 use a bounded meter instead of creating unbounded circles. English labels are centralized in `src/lib/copy.ts`.
+
+The public landing illustration uses this component with its existing explicit fixture caption; authenticated memberships remain unimplemented. 24 unit tests pass, including 4,096 sampled RGB combinations with >=4.5 contrast and negative/excess balance handling. Typecheck and lint pass. A fresh production build plus all six Playwright desktop/360px checks passed; both screenshots were reviewed. This does not establish completed C01/C02 persistence, all screen contracts, or full accessibility coverage. The final label extraction into the shared copy file preserved displayed text and passed typecheck.
 
 ## Completion rules
 

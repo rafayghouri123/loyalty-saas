@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { ArrowRight, Coffee, Gift, QrCode, Smartphone, Sparkles, Users, Clock3, ChartNoAxesCombined, MessageCircle, Bell, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getIdentity } from '@/lib/config';
+import { LoyaltyCard } from '@/components/loyalty-card';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,10 +24,9 @@ export default function Home() {
       <p className="hero-copy">Turn the next coffee into the next visit. Give your customers a loyalty card that’s always close at hand.</p>
       <div className="actions"><Button asChild><Link href="/auth/login?intent=business">Start your cafe trial <ArrowRight size={16} aria-hidden="true" /></Link></Button><Button variant="ghost" asChild><a href="#how-it-works">See how it works</a></Button></div>
       <p className="microcopy">One shared app. Your cafe’s own rewards.</p></div>
-      <figure className="illustration"><div className="loyalty-card"><div className="card-brand"><span className="cafe-emblem"><Coffee aria-hidden="true" /></span><div><strong>Your neighbourhood cafe</strong><span className="eyebrow">A little loyalty, a little more joy</span></div></div>
-        <h2>Your next cup is getting closer.</h2><p className="microcopy">An illustrative stamp card</p>
-        <div className="stamp-grid" aria-label="Example: 6 of 8 stamps">{Array.from({length:8},(_,i)=><span key={i} className={`stamp ${i<6?'filled':''}`} aria-hidden="true">{i<6?<Coffee size={21}/>:i===7?<Gift size={21}/>:<span>7</span>}</span>)}</div>
-        <div className="card-progress"><strong>6 of 8 stamps</strong><span>2 more to your next reward</span></div></div><figcaption className="illustration-caption">Illustrative card · Example terms, not an active programme</figcaption></figure>
+      <figure className="illustration"><LoyaltyCard businessName="Your neighbourhood cafe" accent="#166534" programme="stamps"
+        balance={6} rewardCost={8} rewardTitle="Your next cup is getting closer." serverEligible={false} />
+        <figcaption className="illustration-caption">Illustrative card · Example terms, not an active programme</figcaption></figure>
     </section>
     <div className="feature-strip container"><span><QrCode size={18} aria-hidden="true"/> Scan, earn, enjoy</span><span><Smartphone size={18} aria-hidden="true"/> One install for every card</span><span><Sparkles size={18} aria-hidden="true"/> Your brand, your rewards</span><span><Check size={18} aria-hidden="true"/> Built around consent</span></div>
     <section id="how-it-works" className="section container"><div className="section-heading"><p className="eyebrow">Simple at the counter</p><h2>A familiar routine.<br />A more rewarding visit.</h2></div><div className="three-grid">{[
