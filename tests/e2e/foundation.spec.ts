@@ -1,5 +1,25 @@
 import { test, expect } from '@playwright/test';
 
+test('customer navigation reaches honest setup pages with an accessible current location', async ({ page }) => {
+  await page.goto('/app');
+  const navigation = page.getByRole('navigation', { name: 'Customer navigation' });
+  await expect(navigation.getByRole('link', { name: 'Cards', exact: true })).toHaveAttribute('aria-current', 'page');
+  for (const label of ['Offers', 'Referrals', 'Account']) {
+    const link = navigation.getByRole('link', { name: label, exact: true });
+    const bounds = await link.boundingBox();
+    expect(bounds?.height).toBeGreaterThanOrEqual(44);
+    expect(bounds?.width).toBeGreaterThanOrEqual(44);
+    await link.focus();
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('heading', { level: 1, name: label, exact: true })).toBeVisible();
+    await expect(link).toHaveAttribute('aria-current', 'page');
+    await expect(navigation.locator('[aria-current="page"]')).toHaveCount(1);
+    await expect(page.getByText('This development environment is not connected to authentication yet.', { exact: false })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  }
+  await page.screenshot({ path: test.info().outputPath('customer-shell.png'), fullPage: true });
+});
+
 test('public preview is honest and usable on narrow and desktop screens',async({page})=>{
   await page.goto('/');
   await expect(page.getByRole('heading',{level:1})).toContainText('A little thank you.');

@@ -11,11 +11,11 @@
 | P05 | Enrollment: `/join/[slug]` | Not started | Not started | Not started | Not started | Not started | Pending |
 | P06 | Workspace selection: `/workspace` | Setup state only | Pending | Verified user boundary only | Pending | Pending | Workspaces/roles/onboarding pending |
 | P07 | Policies: `/privacy`, `/terms` | Missing-config state | Pending | Public only | Pending | Pending | Operator policy text and publication required |
-| C01 | Card collection: `/app` | Setup state only | Pending | Verified user boundary only | Pending | Production no-store check passed | No fabricated memberships; real collection pending |
+| C01 | Card collection: `/app` | Shared header/bottom navigation; setup state | Pending | Verified user boundary only | Pending | Production no-store and desktop/360px keyboard navigation passed | No fabricated memberships; real collection pending |
 | C02 | Card detail: `/app/cards/[membershipId]` | Not started | Not started | Not started | Not started | Not started | Pending |
 | C03 | Rewards and redemption intent: `/app/cards/[membershipId]/rewards` | Not started | Not started | Not started | Not started | Not started | Pending |
-| C04 | Offers: `/app/offers` and `/app/offers/[offerId]` | Not started | Not started | Not started | Not started | Not started | Pending |
-| C05 | Referrals: `/app/referrals` | Not started | Not started | Not started | Not started | Not started | Pending |
+| C04 | Offers: `/app/offers` and `/app/offers/[offerId]` | List-route setup screen only; detail/fields pending | Not started | Verified-user page boundary | Not started | Setup navigation on desktop/360px | Full offer contract pending; no mock offers or claim success |
+| C05 | Referrals: `/app/referrals` | Setup screen only; fields pending | Not started | Verified-user page boundary | Not started | Setup navigation on desktop/360px | No fabricated share links/counters; full referral contract pending |
 | C06 | Account: `/app/settings` | Initial device settings at `/app/notifications`; full account pending | Push challenge/ack/revoke only | Same verified session | Strict device payloads; generation isolation | SQL/worker/clear-state checks passed; devices pending | push_devices, push_registration_challenges; birthday/preferences/export/deletion still pending |
 | C07 | Per-cafe preferences: `/app/cards/[membershipId]/preferences` | Not started | Not started | Not started | Not started | Not started | Pending |
 | S01 | Scan home: `/staff/[businessId]` | Not started | Not started | Not started | Not started | Not started | Pending |
