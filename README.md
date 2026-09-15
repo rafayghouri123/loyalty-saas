@@ -2,6 +2,8 @@
 
 Implementation in progress against `LOYALTY_SAAS_IMPLEMENTATION_BRIEF.md` v1.6. This is an early foundation, **not a completed application or a production-ready service**. Track the entire launch scope in [implementation status](docs/implementation-status.md), [43-screen checklist](docs/screen-checklist.md), and [78-table checklist](docs/schema-checklist.md).
 
+Phase 0 engineering acceptance completed on 2026-09-15. See the [acceptance audit](docs/phase-0-acceptance.md) for exact evidence, including deployed Google login, atomic profile/outbox processing, real Firebase foreground acknowledgement, and the remaining later release gates.
+
 ## Start locally
 
 Use **Node 24.21.0 LTS** and npm. Direct dependency versions are pinned; `package-lock.json` records the full graph. See [exact versions and compatibility decisions](docs/dependency-versions.md).
@@ -60,7 +62,7 @@ Install Playwright's Chromium browser with `npx.cmd playwright install chromium`
 - User-scoped Supabase SSR clients and verified-user boundary, with strict origin/body validation and private response headers.
 - Three SQL migrations: private profile, tenant/branch/access foundation, immutable audit, outbox, durable worker receipts, shared rate limits and receipt-bound push devices. Profile creation is atomic and retry-safe.
 - A separate pg-boss worker whose durable enqueue and outbox marker use the same PostgreSQL transaction. It validates authoritative event data and restricts runtime database privileges.
-- One PWA manifest/registration with generic offline shell; no caching of private responses. Data-only foreground challenges, encrypted token storage, same-session acknowledgements, generation checks and sign-out revocation are implemented locally. `/app/notifications` is the initial authenticated device settings route. Real provider/device verification and customer offline summaries remain pending.
+- One PWA manifest/registration with generic offline shell; no caching of private responses. Data-only foreground challenges, encrypted token storage, same-session acknowledgements, generation checks and sign-out revocation are implemented. `/app/notifications` is the initial authenticated device settings route. One real FCM foreground registration/acknowledgement is verified; broader device coverage and customer offline summaries remain pending.
 
 The fixture Auth schema in the SQL harness does not prove Supabase JWT handling, Auth, PostgREST or Storage. The full two-cafe accounting seed, all financial features, 43 complete screens, push/WhatsApp, reporting, billing/privacy, deployment and launch hardening are still required. See [development runbook](docs/development-runbook.md) for the precise boundaries and local database strategy.
 

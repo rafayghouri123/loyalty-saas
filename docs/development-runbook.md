@@ -38,7 +38,9 @@ Magic-link preflight enforces 5/email/hour, 30/trusted-IP/hour, and a sliding 60
 
 The worker deletes up to 5,000 expired rate buckets every five seconds in a transaction independent of outbox dispatch. Alert on worker downtime or oldest expired bucket approaching 24 hours. External retention monitoring is a release gate; no claim is made that a stopped worker can meet retention. Production ingress uses only Vercel server metadata and x-vercel-forwarded-for. Local fixtures inject the adapter server-side; do not set fake VERCEL variables to make local headers trusted.
 
-## Push staging verification (required, not yet run)
+## Push staging verification (full matrix still required)
+
+The early live slice passed: the deployed app created a challenge, a separate local worker sent it through FCM, and the visible browser acknowledged it with the matching active binding. The user confirmed successful connection. This verifies that one browser path; the remaining account-switch, background, installation and hosted-supervision matrix below is not yet complete. See `phase-0-acceptance.md` for the scope of foundation acceptance.
 
 Before interactive testing, run `node scripts/verify-deployment.mjs https://YOUR-DEPLOYMENT.vercel.app` using the pinned Node runtime. This checks database readiness, selected private cache headers, canonical/foreign/missing origins, both OAuth destinations, and the Supabase redirect to Google without logging authentication URLs or cookies. It intentionally stops before user login. Set Vercel's `NEXT_PUBLIC_APP_URL` to the stable testing origin and redeploy when it changes; the app enforces that origin for mutations. This check does not replace the authenticated/device steps below or prove ingress header spoofing resistance.
 

@@ -4,11 +4,11 @@ Specification: `LOYALTY_SAAS_IMPLEMENTATION_BRIEF.md`, version 1.6. Read all 1,5
 
 ## Current milestone
 
-Phase 0 in progress. The original repository contained only the brief and start prompt, both untracked; no application, dependency manifest, migrations, environment files, or commits existed. No existing application behavior was assumed. The original documents are preserved. A runnable Next.js foundation, first SQL migration and real pg-boss processing boundary now exist. This is not feature or phase completion.
+Phase 0 engineering acceptance is complete as of 2026-09-15; see [the requirement-by-requirement audit](phase-0-acceptance.md). The original repository contained only the brief and start prompt, both untracked; no application, dependency manifest, migrations, environment files, or commits existed. Original documents are preserved. The runnable foundation now has verified deployed Auth, real atomic profile/outbox processing and a real foreground Firebase challenge/acknowledgement. The application and launch remain incomplete; Phase 1 has not started beyond the original foundation primitives.
 
 | Phase | Required outcome | State | Evidence / remaining work |
 | --- | --- | --- | --- |
-| 0 | Audit, pinned stack, runnable web, auth/RPC/outbox/worker/push integration slice | Live foreground slice verified; remaining environment/device checks open | Node 24.21.0; 39 exact dependencies; production web+worker build, typecheck, lint, 22 unit tests, 23 real PostgreSQL/queue checks and 6 browser checks passed. Deployed Google login, real profile/outbox processing and Firebase foreground challenge acknowledgement verified for one browser. See remaining gates below. |
+| 0 | Audit, pinned stack, runnable web, auth/RPC/outbox/worker/push integration slice | Complete within Phase 0 scope | [Acceptance audit](phase-0-acceptance.md): pinned runtime/stack, documented setup/trust/cache boundaries, 22 unit tests, 23 real PostgreSQL/queue checks, fresh production build and 6 browser checks passed. Deployed Google login, real profile/outbox processing and Firebase foreground acknowledgement verified. Later release gates remain below. |
 | 1 | Design tokens, accessible primitives, all 43 screen contracts and shells | Initial primitives only | Public/auth/setup layouts exist. Broad screen work waits for the early integration boundary. No screen is fully complete. |
 | 2 | Verified auth, MFA, onboarding, tenancy, invitations, enrollment, consent, storage | Foundation only | Own-profile RLS, verified-account SQL checks and composite branch FKs tested. Twelve public tables plus private security records and catalog-generated types exist; full model/roles/MFA/storage still pending. |
 | 3 | Transactional earn, secure intents, redemption, ledger, reversals, adjustments | Not started | Worked accounting fixture, concurrent writes and direct RPC tests required. |
@@ -28,8 +28,8 @@ Local engineering proceeds with explicitly labelled fixtures. Missing live input
 | Product name, HTTPS domain and support contact | Yes | No | No |
 | Published privacy/terms/consent wording and versions | Yes | No | No |
 | Published plan prices/limits, real bank/provider IDs and payment instructions | Yes | No | No |
-| Isolated Supabase projects and Auth/email/OAuth configuration | Yes | Local connection, remote database and Google OAuth enabled | PostgreSQL 17.6 migrations/runtime grants/PostgREST and Google authorization redirect verified; completed user sign-in pending |
-| Firebase web/VAPID and worker credentials | Yes | Yes, local test configuration | Google authentication, remote web-config match and FCM validation-only request passed; real device receipt pending |
+| Isolated Supabase projects and Auth/email/OAuth configuration | Yes | Local connection, remote database and Google OAuth enabled | PostgreSQL 17.6 migrations/runtime grants/PostgREST and deployed Google sign-in verified; production isolation, email/invitations and full session/MFA tests remain pending |
+| Firebase web/VAPID and worker credentials | Yes | Configured for the tested Vercel origin and local worker | Real FCM foreground receipt, acknowledgement and matching active binding verified for one browser; Android/iPhone and broader device coverage remain pending |
 | Persistent worker host, region, SSL/pooling and spend estimate | Yes | No | No |
 | Production encryption/HMAC key IDs, rotation, admin bootstrap and MFA recovery | Yes | No | No |
 | Financial/audit retention, backup coverage and restore rehearsal | Yes | No | No |
@@ -53,13 +53,13 @@ Each screen needs layout, persistence, authorization, validation and meaningful 
 - Node 24.21.0 downloaded to ignored `.tools`; local encryption/HMAC keys generated into ignored `.env.local` without printing values. Production keys remain unconfigured.
 - `scripts/run.ps1 test:e2e`: 6 checks passed on the production build in Chromium desktop and 360px Pixel emulation. Verified public/signup navigation, no horizontal overflow, honest missing-config states including push/logout, private no-store headers, manifest identity, service-worker revalidation and old-account binding removal from real browser IndexedDB. Desktop/mobile screenshots reviewed. Initial dev-mode cache-header assertion failed because Next.js dev overrides page Cache-Control; the unchanged security requirement is now verified against `next start`. Authenticated foreground receipt/device permission behavior still requires the real provider setup.
 
-## Phase 0 remaining verification
+## Remaining release verification identified during Phase 0
 
 1. **Real Supabase integration:** PostgreSQL 17.6 migrations, runtime-role/pooler grants, actual PostgREST readiness and anonymous denial pass. Browser Google sign-in reached the server-verified authenticated app. The existing real profile creation event was processed by the restricted worker and has a durable receipt. Two-account direct PostgREST/RLS and expired/revoked-session tests remain pending.
 2. **Real FCM/browser integration:** the live foreground challenge path now passes for one user test browser: Firebase accepted the message, the browser acknowledged it, and the matching device binding is active. Real Android/iPhone installation and shared-device/logout checks remain open; the browser/OS used for this successful test has not been recorded.
 3. **Hosted configuration evidence:** the user-provided Vercel deployment now passes database readiness, OAuth initiation/provider redirect and sampled private caching checks (see below). Controlled preview ingress spoofing, separately supervised worker and the remaining environment/runbook evidence are pending. Region benchmarking remains an explicit later release gate.
 
-The local API/worker implementation, shared limiter, browser safeguards and staging runbook are now present. These three verification groups remain open; Phase 0 is not marked complete. Browser concurrency, complete encryption-key rotation, CSP, shared limiter coverage on all later domain RPCs, and the direct Auth magic-link bypass gate still need the relevant later implementation/release checks.
+The local API/worker implementation, shared limiter, browser safeguards and staging runbook are present, and the early live integration slice passes. The full verification groups above remain launch requirements, allocated to the later relevant phases by the brief; they no longer block Phase 0 engineering acceptance. Browser concurrency, complete encryption-key rotation, CSP, shared limiter coverage on all later domain RPCs, and the direct Auth magic-link bypass gate still need the relevant later implementation/release checks.
 
 ## Firebase credential verification (2026-09-13)
 
@@ -99,8 +99,8 @@ The same live test subsequently completed: observed one consumed challenge, then
 
 The user also confirmed the successful device connection. The bounded local worker logged graceful shutdown at 2026-09-14 16:37:13 UTC and exited with code 0. It is no longer running; continuous registration delivery requires a running worker. Phase 1 remains on hold at the user's explicit request until Phase 0 is complete.
 
-1. Finish the Phase 0 Supabase Auth/PostgREST and foreground FCM challenge boundary. Add direct ingress/rate-limiter and push/session/installation tests; real provider/device proof needs the listed staging inputs.
-2. Continue Phase 1 controls and all 43 screen contracts, then complete Phase 2 migrations, tenants/branches, immutable policy documents, MFA, onboarding/invitations, memberships/consent and private storage upload grants.
+1. Phase 0 audit closed on 2026-09-15 after live foreground acknowledgement, deployed cache/anonymous access checks, migration comparison and a fresh six-test browser run. Keep the listed broader hosted/session/device/security gates visible through their assigned phases.
+2. Begin Phase 1 controls and all 43 screen contracts, then complete Phase 2 migrations, tenants/branches, immutable policy documents, MFA, onboarding/invitations, memberships/consent and private storage upload grants.
 3. Continue Phases 3–9 in order, including all audited accounting, referral/promotion, messaging, reporting, billing/privacy, hosting and pilot requirements.
 
 The current `profile.created` worker event is an internal integration probe with a durable receipt. It does not send a customer message, process a campaign or imply financial features are implemented. Source tables contain no production data. The SQL harness's Auth fixture is explicitly not Supabase JWT/provider verification.
