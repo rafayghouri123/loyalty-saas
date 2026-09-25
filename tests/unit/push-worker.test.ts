@@ -26,7 +26,7 @@ function workerFixture(binding:Binding,visible=true) {
 }
 describe('coordinated service-worker privacy boundary',()=>{
   it('drops mismatched generations, installations and missing local bindings',async()=>{
-    const binding={installationId:randomUUID(),bindingGeneration:randomUUID()},fixture=workerFixture(binding);
+    const binding={installationId:randomUUID(),bindingGeneration:randomUUID()},fixture=workerFixture(binding,false);
     for(const data of [{type:'loyalty.notification.v1',...binding,bindingGeneration:randomUUID()},
       {type:'loyalty.notification.v1',...binding,installationId:randomUUID()},{}])await fixture.push({data});
     expect(fixture.notifications).toEqual([]);
@@ -35,8 +35,9 @@ describe('coordinated service-worker privacy boundary',()=>{
     expect(fixture.notifications).toEqual([]);
   });
   it('uses minimal previews and refuses automatic provider notification payloads',async()=>{
-    const binding={installationId:randomUUID(),bindingGeneration:randomUUID()},fixture=workerFixture(binding);
-    const data={type:'loyalty.notification.v1',...binding,title:'Private customer detail',url:'https://attacker.invalid'};
+    const binding={installationId:randomUUID(),bindingGeneration:randomUUID()},fixture=workerFixture(binding,false);
+    const data={type:'loyalty.notification.v1',...binding,title:'Private customer detail',body:'Private customer detail',
+      destination:`/app/cards/${randomUUID()}`,recipientId:randomUUID(),eventKey:randomUUID(),url:'https://attacker.invalid'};
     await fixture.push({notification:{title:'Unsafe automatic preview'},data});
     expect(fixture.notifications).toEqual([]);
     await fixture.push({data});

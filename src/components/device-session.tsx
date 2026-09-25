@@ -1,12 +1,14 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { clearDeviceState, readDeviceBinding } from '@/lib/push/browser';
+import { clearOfflineCards, switchOfflineOwner } from '@/lib/offline/cards';
 import { Button } from './ui/button';
 
 export function DeviceSessionGuard({userId}:{userId:string|null}) {
   useEffect(()=>{
     if(!('indexedDB' in window))return;
     void readDeviceBinding().then(async binding=>{if(binding&&binding.userId!==userId)await clearDeviceState();}).catch(()=>{});
+    void switchOfflineOwner(userId).catch(()=>{});
   },[userId]);
   return null;
 }
@@ -16,6 +18,7 @@ export function SignOutButton() {
     setPending(true);setError('');
     try {
       await clearDeviceState();
+      await clearOfflineCards();
       const response=await fetch('/api/auth/logout',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
       const result=await response.json();
       if(!response.ok&&response.status!==401)throw new Error(result.error?.message||'Sign-out could not be completed.');

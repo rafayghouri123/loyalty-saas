@@ -2,11 +2,14 @@ import Link from 'next/link';
 import { ArrowRight, Coffee, Gift, QrCode, Smartphone, Sparkles, Users, Clock3, ChartNoAxesCombined, MessageCircle, Bell, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getIdentity } from '@/lib/config';
+import { publicConfiguration } from '@/features/tenancy/data';
+import { formatPaisa } from '@/lib/formatting';
 import { LoyaltyCard } from '@/components/loyalty-card';
 
 export const dynamic = 'force-dynamic';
 
-export default function Home() {
+export default async function Home() {
+  const { plans } = await publicConfiguration();
   const identity = getIdentity();
   const features = [
     [Users, 'Give friends a reason to visit', 'Referral rewards qualify after a purchase, with separate rewards for both friends.'],
@@ -35,7 +38,7 @@ export default function Home() {
       ['03','Enjoy a well-earned reward','Customers choose a reward and show a short-lived code. Staff confirm when the reward is given.'],
     ].map(([number,title,body])=><article className="step-card" key={number}><span className="step-number">{number} /</span><h3>{title}</h3><p>{body}</p></article>)}</div></section>
     <section id="features" className="section container"><div className="section-heading"><p className="eyebrow">The launch product</p><h2>More than a digital stamp card.</h2><p className="muted">The planned launch brings daily checkout, thoughtful follow-ups and useful reporting together.</p></div><div className="three-grid">{features.map(([Icon,title,body])=><article className="feature-card" key={title}><Icon size={24} aria-hidden="true"/><h3>{title}</h3><p>{body}</p></article>)}</div></section>
-    <section id="pricing" className="section container"><div className="pricing-panel"><div><p className="eyebrow">A plan for your cafe</p><h2>Contact us for pricing</h2><p className="muted">Launch plans include referrals, double slots, reporting and manual WhatsApp follow-ups. Published prices and limits will appear here once configured.</p></div>{identity.supportEmail ? <Button asChild><a href={`mailto:${identity.supportEmail}`}>Contact us <ArrowRight size={16}/></a></Button> : <span className="badge">Pricing setup pending</span>}</div></section>
+    <section id="pricing" className="section container"><h2>Plans for your cafe</h2>{plans.length ? <div className="three-grid">{plans.map(plan => <article className="screen-panel" key={plan.id}><h3>{plan.name}</h3><p>{formatPaisa(plan.pricePaisa)} / {plan.billingPeriod}</p><p>{plan.trialDays} trial days · {plan.branchLimit} active branches · {plan.staffLimit} staff</p><p>Includes referrals, double slots, reporting and manual WhatsApp follow-ups.</p><Button asChild><Link href="/auth/login?intent=business">Start your cafe trial</Link></Button></article>)}</div> : <div className="pricing-panel"><p>Published prices and limits will appear here once configured.</p>{identity.supportEmail ? <a href={`mailto:${identity.supportEmail}`}>Contact us for pricing</a> : <span className="badge">Pricing setup pending</span>}</div>}</section>
     <section className="section container faq"><h2>A few good questions.</h2><details><summary>Do customers need another app?</summary><p>Customers can use the website or install the shared Progressive Web App. Each cafe has a separate card. Installation is optional for loyalty participation.</p></details><details><summary>Does this send WhatsApp messages automatically?</summary><p>No. A staff member opens each prepared chat, reviews it and presses Send in the cafe’s WhatsApp account. An opened chat is recorded separately from a message marked as sent.</p></details><details><summary>Can customers keep earning without notifications?</summary><p>Yes. Notifications and marketing consent are optional. Loyalty cards and the offer inbox remain available without push permission.</p></details></section>
     </main><footer className="site-footer container"><span>{identity.name} · Made for the next visit.</span><nav aria-label="Footer">{identity.supportEmail&&<a href={`mailto:${identity.supportEmail}`}>Support</a>}<Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link></nav></footer></>;
 }

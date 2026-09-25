@@ -4,7 +4,7 @@ test('customer navigation reaches honest setup pages with an accessible current 
   await page.goto('/app');
   const navigation = page.getByRole('navigation', { name: 'Customer navigation' });
   await expect(navigation.getByRole('link', { name: 'Cards', exact: true })).toHaveAttribute('aria-current', 'page');
-  for (const label of ['Offers', 'Referrals', 'Account']) {
+  for (const label of ['Account']) {
     const link = navigation.getByRole('link', { name: label, exact: true });
     const bounds = await link.boundingBox();
     expect(bounds?.height).toBeGreaterThanOrEqual(44);
@@ -17,6 +17,17 @@ test('customer navigation reaches honest setup pages with an accessible current 
     await expect(page.getByText('This development environment is not connected to authentication yet.', { exact: false })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   }
+  for (const label of ['Offers', 'Referrals']) {
+    await page.goto('/app');
+    const link = navigation.getByRole('link', { name: label, exact: true });
+    const bounds = await link.boundingBox();
+    expect(bounds?.height).toBeGreaterThanOrEqual(44);
+    expect(bounds?.width).toBeGreaterThanOrEqual(44);
+    await link.focus();
+    await page.keyboard.press('Enter');
+    await expect(page).toHaveURL(/\/auth\/login/u);
+    await expect(page.getByText('Authentication is not configured in this development environment.', { exact: false })).toBeVisible();
+  }
   await page.screenshot({ path: test.info().outputPath('customer-shell.png'), fullPage: true });
 });
 
@@ -24,7 +35,8 @@ test('public preview is honest and usable on narrow and desktop screens',async({
   await page.goto('/');
   await expect(page.getByRole('heading',{level:1})).toContainText('A little thank you.');
   await expect(page.getByText('Illustrative card · Example terms, not an active programme')).toBeVisible();
-  await expect(page.getByRole('heading',{name:'Contact us for pricing'})).toBeVisible();
+  await expect(page.getByRole('heading',{name:'Plans for your cafe'})).toBeVisible();
+  await expect(page.getByText('Published prices and limits will appear here once configured.')).toBeVisible();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
   await page.screenshot({path:test.info().outputPath('landing.png'),fullPage:true});
   await page.getByRole('link',{name:'Business sign in'}).click();
@@ -70,5 +82,35 @@ test('entering sign-in clears the previous account binding from real browser sto
   await expect.poll(()=>page.evaluate(async()=>{
     const db=await new Promise<IDBDatabase>((resolve,reject)=>{const request=indexedDB.open('loyalty-device-v1',1);request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});
     try{return await new Promise<boolean>((resolve,reject)=>{const request=db.transaction('state').objectStore('state').get('binding');request.onsuccess=()=>resolve(request.result===undefined);request.onerror=()=>reject(request.error);});}finally{db.close();}
+  })).toBe(true);
+});
+
+test('account switch clears opted-in offline card summaries and keeps the service-worker cache public',async({page})=>{
+  await page.goto('/');
+  await page.evaluate(async()=>{
+    const db=await new Promise<IDBDatabase>((resolve,reject)=>{const request=indexedDB.open('loyalty-offline-v1',1);
+      request.onupgradeneeded=()=>request.result.createObjectStore('state');request.onsuccess=()=>resolve(request.result);
+      request.onerror=()=>reject(request.error);});
+    await new Promise<void>((resolve,reject)=>{const tx=db.transaction('state','readwrite');tx.objectStore('state').put({
+      ownerId:'previous-fixture-account',enabled:true,cards:[{id:crypto.randomUUID(),businessName:'TEST Private Cafe',units:'7',
+        programmeType:'stamps',status:'active'}],fetchedAt:Date.now(),epoch:crypto.randomUUID()},'cards');
+      tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);});db.close();
+  });
+  await page.goto('/auth/login');
+  await expect.poll(()=>page.evaluate(async()=>{
+    const db=await new Promise<IDBDatabase>((resolve,reject)=>{const request=indexedDB.open('loyalty-offline-v1',1);
+      request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});
+    try{return await new Promise<boolean>((resolve,reject)=>{const request=db.transaction('state').objectStore('state').get('cards');
+      request.onsuccess=()=>resolve(request.result?.ownerId===null&&request.result?.cards?.length===0);
+      request.onerror=()=>reject(request.error);});}finally{db.close();}
+  })).toBe(true);
+  await page.goto('/offline-v2.html');
+  await expect(page.getByText('No offline card data is available.')).toBeVisible();
+  await expect.poll(()=>page.evaluate(async()=>{
+    await navigator.serviceWorker.ready;
+    const keys=await caches.keys(),items=await Promise.all(keys.map(async key=>{
+      const cache=await caches.open(key);return (await cache.keys()).map(request=>new URL(request.url).pathname);}));
+    const paths=items.flat();return paths.includes('/offline-v2.html')&&paths.includes('/icons/icon-192-v1.png')
+      &&!paths.some(path=>path==='/app'||path.startsWith('/api/')||path.startsWith('/auth/'));
   })).toBe(true);
 });

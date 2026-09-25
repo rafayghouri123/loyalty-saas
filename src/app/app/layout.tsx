@@ -3,6 +3,7 @@ import { DeviceSessionGuard, SignOutButton } from '@/components/device-session';
 import Link from 'next/link';
 import { CustomerNavigation } from '@/components/customer-navigation';
 import { getIdentity } from '@/lib/config';
+import { PushBanner } from '@/components/push-banner';
 
 export default async function CustomerLayout({children}:{children:React.ReactNode}) {
   const {user}=await verifiedUser();
@@ -10,6 +11,6 @@ export default async function CustomerLayout({children}:{children:React.ReactNod
     <header className="customer-header container"><Link className="wordmark" href="/app">{getIdentity().name}</Link>
       <div className="customer-header-actions"><Link className="button button-ghost" href="/app/settings">Account</Link>{user&&<SignOutButton/>}</div>
     </header>
-    {children}<CustomerNavigation/>
+    <PushBanner/>{children}<CustomerNavigation/>
   </div>;
 }

@@ -1,3 +1,4 @@
 -- Local-only seed intentionally contains no real identity, plan price or payment data.
--- Phase 2 will add the two complete fictional tenant/accounting fixtures.
+-- Phase 2 fixtures are in fixtures/phase2.sql and configured only for local seeding.
+-- Both cafes remain drafts. No purchase/ledger/accounting fixture is introduced before Phase 3.
 -- Foundation role tests create and roll back their own explicit auth/tenant fixtures.

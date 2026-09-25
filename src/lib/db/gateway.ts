@@ -26,6 +26,22 @@ export function createGateway(settings: { connectionString: string; ssl: boolean
   ).then(result => { if (!result.rows[0]?.allowed) throw new Error('Dedicated web gateway role required.'); })
     .catch(error => { checked = null; throw error; });
   return {
+    async authorizeAuthEmail(email:string,emailSubject:string,ipSubject:string,callbackUrl:string) {
+      await check();
+      const result=await pool.query('select public.gateway_authorize_auth_email($1,$2,$3,$4) as result',[email,emailSubject,ipSubject,callbackUrl]);
+      return z.object({allowed:z.boolean(),retryAfterSeconds:z.number(),token:z.string().optional(),grantId:z.uuid().optional()}).parse(result.rows[0]?.result);
+    },
+    async issueReferralGrant(input:{userId:string;sessionId:string;businessSlug:string;code:string;seenAt:string;tokenHash:string}):Promise<boolean> {
+      await check();
+      const result=await pool.query('select public.gateway_issue_referral_grant($1,$2,$3,$4,$5,$6) as issued',
+        [input.userId,input.sessionId,input.businessSlug,input.code,input.seenAt,input.tokenHash]);
+      return z.boolean().parse(result.rows[0]?.issued);
+    },
+    async recordReferralVisit(code:string):Promise<boolean> {
+      await check();
+      const result=await pool.query('select public.gateway_record_referral_visit($1) as recorded',[code]);
+      return z.boolean().parse(result.rows[0]?.recorded);
+    },
     async requestPushChallenge(input: PushCandidate): Promise<unknown> {
       await check();
       const result = await pool.query('select public.gateway_request_push_challenge($1,$2,$3,$4,$5,$6,$7,$8,$9) as result',

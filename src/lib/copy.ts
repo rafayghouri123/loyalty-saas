@@ -1,4 +1,6 @@
 export const copy = {
+  profile: { name: 'Display name', nameHelp: '1–80 characters. You can choose what to share with each cafe.', saving: 'Saving…', save: 'Save and continue' },
+  pageState: { loading: 'Loading your page…', errorTitle: 'This page could not be loaded', errorBody: 'Please try again. If the problem continues, return to your cards.', retry: 'Try again', back: 'Back to cards' },
   setup: { title: 'A few things need setting up', body: 'This development environment is not connected to authentication yet. Your account and loyalty cards will be available after setup.' },
   cards: { empty: 'Your loyalty cards will appear here. Scan a cafe’s QR code to join.' },
   card: { nextReward: 'Your next reward', rewardAvailable: 'Reward available', offlineUpdated: 'Offline · Last updated',

@@ -5,7 +5,7 @@ import type { Database } from './lib/db/database.types';
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
-  if (request.nextUrl.pathname === '/api/health/live') {
+  if (request.nextUrl.pathname === '/api/health/live' || request.nextUrl.pathname.startsWith('/ui-fixtures')) {
     response.headers.set('Cache-Control', 'private, no-store');
     return response;
   }
@@ -28,4 +28,4 @@ export async function proxy(request: NextRequest) {
   return response;
 }
 
-export const config = { matcher: ['/app/:path*', '/auth/:path*', '/workspace', '/dashboard/:path*', '/staff/:path*', '/admin/:path*', '/invite/:path*', '/join/:path*', '/api/:path*'] };
+export const config = { matcher: ['/app/:path*', '/auth/:path*', '/workspace', '/dashboard/:path*', '/staff/:path*', '/admin/:path*', '/invite/:path*', '/join/:path*', '/api/:path*', '/ui-fixtures/:path*', '/r/:path*'] };

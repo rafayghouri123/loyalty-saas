@@ -6,6 +6,7 @@
   "engines": { "node": ">=24.21.0 <25" },
   "scripts": {
     "dev": "next dev --hostname 127.0.0.1",
+    "preview:screens": "node scripts/preview-screens.mjs",
     "worker:dev": "tsx watch --env-file-if-exists=.env.local src/worker/main.ts",
     "build": "next build && tsc -p tsconfig.worker.json",
     "start": "next start --hostname 127.0.0.1",

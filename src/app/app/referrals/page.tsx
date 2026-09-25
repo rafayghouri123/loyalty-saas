@@ -1,6 +1,7 @@
-import { CustomerFeatureSetup } from '@/components/customer-feature-setup';
-import { copy } from '@/lib/copy';
+import { customerData } from '@/features/tenancy/data';
+import { CustomerReferrals } from '@/features/loyalty/phase4-ui';
 export const dynamic = 'force-dynamic';
-export default function ReferralsPage() {
-  return <CustomerFeatureSetup title={copy.customerSetup.referrals.title}><p>{copy.customerSetup.referrals.body}</p></CustomerFeatureSetup>;
+export default async function ReferralsPage() {
+  const { memberships } = await customerData('/app/referrals');
+  return <CustomerReferrals memberships={memberships.map(m=>({id:m.id,businessName:m.businessName,status:m.status}))}/>;
 }

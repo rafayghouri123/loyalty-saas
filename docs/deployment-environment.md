@@ -51,7 +51,7 @@ Use the restricted worker session-pooler URL. Mount the Firebase Admin JSON as a
 
 Install with `npm ci`, compile with `npx tsc -p tsconfig.worker.json`, and start with `npm run worker:start`. For a supervised local verification only, `scripts/run.ps1 worker:dev` uses the existing ignored `.env.local`; keep the terminal running during registration. That temporary process is not evidence of persistent hosted supervision.
 
-Enable live push only in the isolated test environment for an explicitly participating test device. The current worker sends registration challenges only; campaigns remain unimplemented. Keep the notifications page visible while confirming the foreground challenge. Provider acceptance is not receipt: the device must acknowledge before activation.
+Enable live push only in the isolated test environment for an explicitly participating test device. The worker sends registration challenges, staff-only campaign tests and consent-scoped campaign/automation messages. Keep the notifications page visible while confirming the foreground challenge. Provider acceptance is not receipt: the device must acknowledge before activation, and a campaign test still needs an observed browser receipt/open check.
 
 ## Verification
 

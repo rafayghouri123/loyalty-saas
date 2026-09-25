@@ -6,8 +6,10 @@ import { clearDeviceState, deviceEpoch, readDeviceBinding, registerBrowserToken,
 
 const receipt=z.strictObject({type:z.literal('loyalty.registration.v1'),challengeId:z.uuid(),installationId:z.uuid(),nonce:z.string().regex(/^[A-Za-z0-9_-]{43}$/u)});
 const confirmation=z.strictObject({installationId:z.uuid(),bindingGeneration:z.uuid(),status:z.literal('active')});
+type InstallPrompt=Event&{prompt:()=>Promise<void>;userChoice:Promise<{outcome:string}>};
 export function PushRegistration({userId,configured}:{userId:string;configured:boolean}) {
   const [state,setState]=useState<'idle'|'pending'|'active'>('idle'),[message,setMessage]=useState('');
+  const [install,setInstall]=useState<InstallPrompt|null>(null),[iphone,setIphone]=useState(false),[standalone,setStandalone]=useState(false);
   const pending=useRef<{challengeId:string;installationId:string}|null>(null);
   const timer=useRef<ReturnType<typeof setTimeout>|null>(null);
   const busy=useRef(false);
@@ -15,6 +17,13 @@ export function PushRegistration({userId,configured}:{userId:string;configured:b
   const starting=useRef(false);
   const early=useRef<z.infer<typeof receipt>|null>(null);
   const confirm=useRef<((data:z.infer<typeof receipt>)=>Promise<void>)|null>(null);
+  useEffect(()=>{
+    setIphone(/iPhone|iPad|iPod/u.test(navigator.userAgent)||/Macintosh/u.test(navigator.userAgent)&&navigator.maxTouchPoints>1);
+    setStandalone(window.matchMedia('(display-mode: standalone)').matches||('standalone' in navigator&&Boolean((navigator as Navigator&{standalone?:boolean}).standalone)));
+    const onPrompt=(event:Event)=>{event.preventDefault();setInstall(event as InstallPrompt);};
+    window.addEventListener('beforeinstallprompt',onPrompt);
+    return()=>window.removeEventListener('beforeinstallprompt',onPrompt);
+  },[]);
   useEffect(()=>{
     let disposed=false;
     void readDeviceBinding().then(async binding=>{
@@ -77,6 +86,9 @@ export function PushRegistration({userId,configured}:{userId:string;configured:b
     } catch(error) {setState('idle');setMessage(error instanceof Error?error.message:'Device revocation could not be completed.');}
   }
   return <div><p>Notifications are optional. Enabling this device does not subscribe you to business marketing.</p>
+    {!standalone&&iphone&&<p>On iPhone or iPad, use Share → Add to Home Screen, then open the installed app to enable push notifications. Loyalty cards work without installing.</p>}
+    {!standalone&&install&&<Button variant="secondary" onClick={()=>{void install.prompt().then(()=>install.userChoice).finally(()=>setInstall(null));}}>Install app</Button>}
+    {!standalone&&!iphone&&!install&&<p>For easier access, use your browser menu to install this app if the option is available.</p>}
     {!configured&&<p className="notice">Notification setup is not configured in this environment.</p>}
     <Button disabled={!configured||state==='pending'} onClick={state==='active'?disable:enable}>{state==='active'?'Turn off this device':state==='pending'?'Confirming device…':'Enable notifications'}</Button>
     <p role="status" className="microcopy">{message}</p></div>;

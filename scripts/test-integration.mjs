@@ -8,6 +8,13 @@ import { createServer } from 'node:net';
 import { generateDbTypes } from './generate-db-types.mjs';
 import { testRateLimits } from './test-rate-limits.mjs';
 import { testPushChallenges } from './test-push-challenges.mjs';
+import { testTenancy } from './test-tenancy.mjs';
+import { publishDefaults } from './publish-phase2-defaults.mjs';
+import { testAuthEmail } from './test-auth-email.mjs';
+import { testLoyalty } from './test-loyalty.mjs';
+import { testPhase4 } from './test-phase4.mjs';
+import { testPhase5 } from './test-phase5.mjs';
+import { generateSchemaDiagram } from './generate-schema-diagram.mjs';
 
 const {startWorker}=await import('../src/worker/runtime.ts');
 const base=resolve('.local/integration');
@@ -28,14 +35,20 @@ try{
   await postgres.initialise();await postgres.start();
   client=postgres.getPgClient();await client.connect();
   // Explicit SQL-only Auth fixture. This is not Supabase GoTrue/PostgREST proof.
-  await client.query(`create role anon nologin;create role authenticated nologin;
+  await client.query(`create role anon nologin;create role authenticated nologin;create role supabase_auth_admin nologin;
     create schema auth;
-    create table auth.users(id uuid primary key,email_confirmed_at timestamptz,is_anonymous boolean default false,deleted_at timestamptz);
+    create table auth.users(id uuid primary key,email text,email_confirmed_at timestamptz,is_anonymous boolean default false,deleted_at timestamptz);
     create table auth.sessions(id uuid primary key,user_id uuid not null references auth.users(id),not_after timestamptz);
     create function auth.uid() returns uuid language sql stable as 'select nullif(current_setting(''request.jwt.claim.sub'',true),'''')::uuid';
     create function auth.jwt() returns jsonb language sql stable as 'select coalesce(nullif(current_setting(''request.jwt.claims'',true),''''),''{}'')::jsonb';
     grant usage on schema auth,public to anon,authenticated;
-    grant execute on function auth.uid() to anon,authenticated;`);
+    grant execute on function auth.uid() to anon,authenticated;
+    create schema storage;
+    create table storage.buckets(id text primary key,name text not null,public boolean not null,file_size_limit bigint,allowed_mime_types text[]);
+    create table storage.objects(id uuid primary key default gen_random_uuid(),bucket_id text references storage.buckets,name text not null,unique(bucket_id,name));
+    alter table storage.objects enable row level security;
+    grant usage on schema storage to authenticated,anon;
+    grant select,insert,update,delete on storage.objects to authenticated,anon;`);
   for(const migration of readdirSync('supabase/migrations').filter(v=>v.endsWith('.sql')).sort()) await client.query(readFileSync(`supabase/migrations/${migration}`,'utf8'));
   await test('migration applies to a real PostgreSQL server',async()=>{const result=await client.query('show server_version');console.log(`PostgreSQL ${result.rows[0].server_version}`);});
   const a=randomUUID(),b=randomUUID(),c=randomUUID(),unverified=randomUUID(),anonymous=randomUUID();
@@ -82,9 +95,12 @@ try{
   });
   await test('composite branch assignments reject cross-tenant records',async()=>{
     const cafeA=randomUUID(),cafeB=randomUUID(),branchB=randomUUID(),staffA=randomUUID();
+    await client.query('begin');
     await client.query("insert into public.businesses(id,slug,display_name,created_by) values($1,'fixture-cafe-a','Fixture Cafe A',$3),($2,'fixture-cafe-b','Fixture Cafe B',$3)",[cafeA,cafeB,a]);
     await client.query("insert into public.branches(id,business_id,name,address,city) values($1,$2,'Test branch','Fictional address','Lahore')",[branchB,cafeB]);
     await client.query("insert into public.business_users(id,business_id,user_id,staff_display_name,staff_email,role) values($1,$2,$3,'Fixture owner','fixture@example.invalid','owner')",[staffA,cafeA,a]);
+    await client.query("insert into public.business_users(business_id,user_id,staff_display_name,staff_email,role) values($1,$2,'Fixture owner B','fixture-b@example.invalid','owner')",[cafeB,a]);
+    await client.query('commit');
     await assert.rejects(client.query('insert into public.branch_assignments(business_id,business_user_id,branch_id) values($1,$2,$3)',[cafeA,staffA,branchB]),{code:'23503'});
     await assert.rejects(client.query("insert into public.business_users(business_id,user_id,staff_display_name,staff_email,role,can_contact_customers) values($1,$2,'Cashier','cashier@example.invalid','cashier',true)",[cafeB,b]),{code:'23514'});
   });
@@ -102,7 +118,7 @@ try{
     const deadline=Date.now()+10_000;
     while(!errors.includes('outbox_dispatch_failed')&&Date.now()<deadline)await new Promise(resolve=>setTimeout(resolve,100));
     assert.ok(errors.includes('outbox_dispatch_failed'));
-    assert.equal((await client.query('select count(*) from pgboss.job')).rows[0].count,'0');
+    assert.equal((await client.query("select count(*) from pgboss.job where name='profile-created'")).rows[0].count,'0');
     assert.equal((await client.query("select count(*) from public.outbox_events where state='pending'")).rows[0].count,'3');
     await client.query('drop trigger integration_fail_dispatch on public.outbox_events;drop function public.integration_fail_dispatch()');
     errors.length=0;
@@ -127,7 +143,23 @@ try{
     await assert.rejects(client.query('select public.worker_observe_profile($1)',[bad.id]),{code:'22023'});
   });
   await generateDbTypes(client);
+  await generateSchemaDiagram(client);
   await testPushChallenges({client,postgres,test,users:[a,b,c],password,port,key:pushKey,messages:pushMessages});
+  await testTenancy({client,postgres,test});
+  await testLoyalty({client,postgres,test});
+  await testPhase4({client,postgres,test});
+  await testPhase5({client,test});
+  await testAuthEmail({client,postgres,test});
+  await test('delegated pre-release plan and policy publication is versioned and idempotent',async()=>{
+    await publishDefaults(client); await publishDefaults(client);
+    const result=await client.query("select count(*) from public.policy_documents where version='2026-09-22-v1'");
+    assert.equal(result.rows[0].count,'7');
+  });
+  await test('local-only two-cafe seed applies with all constraints and no transactions',async()=>{
+    await client.query(readFileSync('supabase/fixtures/phase2.sql','utf8'));
+    assert.equal((await client.query("select count(*) from public.businesses where slug in ('test-cafe-a','test-cafe-b') and status='draft'")).rows[0].count,'2');
+    assert.equal((await client.query("select count(*) from public.memberships where customer_user_id='a2000000-0000-4000-8000-000000000003'")).rows[0].count,'2');
+  });
   console.log(`Integration: ${passed.length} checks passed. Auth adapter is SQL-only; provider integration remains pending.`);
 }finally{
   if(worker)await worker.stop();
