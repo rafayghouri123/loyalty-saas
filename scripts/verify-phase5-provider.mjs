@@ -1,6 +1,9 @@
 // Isolated staging project only. Synthetic accounts and an archived cafe are removed in finally.
 import assert from 'node:assert/strict';
 import {createHmac,randomBytes,randomUUID} from 'node:crypto';
+import {mkdtemp,rm} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {basename,dirname,join} from 'node:path';
 import {createClient} from '@supabase/supabase-js';
 import {createServerClient} from '@supabase/ssr';
 import {chromium} from '@playwright/test';
@@ -23,7 +26,8 @@ async function main(){
  const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
  const admin=createClient(url,process.env.STORAGE_SERVICE_ROLE_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
  const sql=new pg.Client({connectionString:process.env.MIGRATION_DATABASE_URL,ssl:databaseTls(true,process.env.DATABASE_CA_CERT_PATH)});
- const run=randomBytes(6).toString('hex'),users=[];let businessId=null,browser=null,stage='connect',lastCode='none';
+ const run=randomBytes(6).toString('hex'),users=[];let businessId=null,browser=null,profileDir=null,persistentContext=null,
+  stage='connect',lastCode='none';
  const rpc=async(who,name,args)=>{stage=`rpc:${name}`;const response=await who.client.rpc(name,args);
   lastCode=response.error?.code??response.data?.error?.code??'none';
   assert(!response.error&&!response.data?.error,`${name} failed`);return response.data;};
@@ -37,8 +41,8 @@ async function main(){
   return expected===200?value.data:value.error;};
  try{
   await sql.connect();
-  assert.equal((await sql.query("select count(*) from public.businesses where status<>'archived'")).rows[0].count,'0',
-   'Use the isolated project without active customer businesses.');
+  const activeBusinesses=await sql.query("select count(*) from public.businesses b where b.status<>'archived' and (b.status<>'draft' or exists (select 1 from public.memberships m where m.business_id=b.id) or exists (select 1 from public.campaigns c where c.business_id=b.id))");
+  assert.equal(activeBusinesses.rows[0].count,'0','Use staging without published businesses, members, or existing campaigns.');
   for(let i=0;i<3;i++){
    stage='create synthetic Auth user';const email=`phase5-${run}-${i}@example.invalid`,password=token();
    const created=await admin.auth.admin.createUser({email,password,email_confirm:true,user_metadata:{display_name:`Phase5 test ${i}`}});
@@ -93,16 +97,24 @@ async function main(){
   assert.equal(scheduled.status,'scheduled');
   await api(owner,'set-campaign-status',{businessId,campaignId:campaign.campaignId,
    rowVersion:scheduled.rowVersion,action:'cancel'});
-  stage='browser:customer-offer';browser=await chromium.launch(live?{channel:'chrome',headless:false}:{headless:true});
-  if(live)browser.on('disconnected',()=>console.log('Live Chrome disconnected before acceptance completed.'));
+  stage='browser:customer-offer';
+  if(live){
+   // Chromium does not support a real Push API subscription in a private Playwright context.
+   profileDir=await mkdtemp(join(tmpdir(),'phase5-push-'));
+   persistentContext=await chromium.launchPersistentContext(profileDir,{
+    channel:'chrome',headless:false,ignoreDefaultArgs:['--disable-background-networking'],
+    baseURL:process.env.PHASE4_TEST_WEB_URL,viewport:{width:390,height:844},permissions:['notifications']
+   });
+   browser=persistentContext.browser();
+  }else browser=await chromium.launch({headless:true});
   const customerContext=await browser.newContext({baseURL:process.env.PHASE4_TEST_WEB_URL,viewport:{width:390,height:844}});
   await customerContext.addCookies([...member.cookies].map(([name,value])=>({name,value,url:process.env.PHASE4_TEST_WEB_URL})));
   const page=await customerContext.newPage();await page.goto('/app/offers');
   await page.getByText('Synthetic test treat').first().waitFor();
   await page.goto(`/app/offers/${offer.offerId}`);await page.getByText('Your claim is saved.').waitFor();
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true);
-  stage='browser:owner-campaign';const ownerContext=await browser.newContext({baseURL:process.env.PHASE4_TEST_WEB_URL,
-   viewport:{width:390,height:844},permissions:live?['notifications']:[]});
+  stage='browser:owner-campaign';const ownerContext=live?persistentContext:await browser.newContext({
+   baseURL:process.env.PHASE4_TEST_WEB_URL,viewport:{width:390,height:844},permissions:[]});
   await ownerContext.addCookies([...owner.cookies].map(([name,value])=>({name,value,url:process.env.PHASE4_TEST_WEB_URL})));
   const ownerPage=await ownerContext.newPage();await ownerPage.goto(`/dashboard/${businessId}/campaigns`);
   await ownerPage.getByText('Synthetic campaign').first().waitFor();
@@ -143,6 +155,8 @@ async function main(){
  }catch(error){throw new Error(`Phase 5 provider check failed at ${stage}; code=${lastCode}; detail=${error instanceof Error?error.message.split('\n')[0]:'unknown'}`);}
  finally{
   if(browser)await browser.close().catch(()=>{});
+  if(profileDir&&dirname(profileDir)===tmpdir()&&basename(profileDir).startsWith('phase5-push-'))
+   await rm(profileDir,{recursive:true,force:true}).catch(()=>{});
   if(businessId)await sql.query("update public.businesses set status='archived' where id=$1 and slug like $2",
    [businessId,`phase5-provider-${run}%`]).catch(()=>{});
   for(const who of users){await who.client.auth.signOut().catch(()=>{});await admin.auth.admin.deleteUser(who.id).catch(()=>{});}
