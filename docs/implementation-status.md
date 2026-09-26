@@ -4,7 +4,7 @@ Specification: `LOYALTY_SAAS_IMPLEMENTATION_BRIEF.md`, version 1.6. Read all 1,5
 
 ## Current milestone
 
-Phases 0–4 are complete within their documented scope; see the [Phase 4 acceptance audit](phase-4-acceptance.md) and earlier phase audits. The original brief and start prompt are preserved. Hosted Auth, transactional loyalty, double slots and purchase-qualified referrals have been verified with synthetic staging accounts. Phase 5 implementation and staging schema are verified; its real notification gate is being checked. Phases 6–9 and launch readiness remain open.
+Phases 0–5 are complete within their documented scope; see the [Phase 5 acceptance audit](phase-5-acceptance.md) and earlier phase audits. The original brief and start prompt are preserved. Hosted Auth, transactional loyalty, double slots, purchase-qualified referrals and a real HTTPS Firebase campaign notification have been verified with synthetic staging accounts. Phases 6–9 and launch readiness remain open.
 
 | Phase | Required outcome | State | Evidence / remaining work |
 | --- | --- | --- | --- |
@@ -13,17 +13,17 @@ Phases 0–4 are complete within their documented scope; see the [Phase 4 accept
 | 2 | Verified auth, MFA, onboarding, tenancy, invitations, enrollment, consent, storage | Complete within Phase 2 scope | Persisted onboarding/programme publication, staff invitations/revocation, membership join/rejoin, scoped contacts/consent, branch/settings/profile controls and private media processing added. 47 real PostgreSQL checks, 40 unit tests, 36 browser checks, production build, lint/typecheck and real Supabase MFA/tenant/Storage/cache checks passed. Actual Resend sandbox delivery, Next PKCE callback, replay rejection and direct-OTP bypass denial passed; see phase-2-acceptance.md. Verified production sender/persistent worker remain release gates. |
 | 3 | Transactional earn, secure intents, redemption, ledger, reversals, adjustments | Complete within Phase 3 scope | [Acceptance](phase-3-acceptance.md): 66 PostgreSQL checks and authenticated Supabase/browser earn, redemption, replay, refund debt, and reconciliation passed. Synthetic camera QR decoding and typed-code redemption passed; physical-device QA remains in Phase 9. |
 | 4 | Double slots and purchase-qualified referrals | Complete within Phase 4 scope | [Acceptance](phase-4-acceptance.md): 79 PostgreSQL checks and authenticated staging/browser attribution, visit deduplication, scheduled 2x, cap races, fresh stale-checkout preview, replay, referral qualification, refund and reconciliation passed. |
-| 5 | PWA, challenge-bound push, campaigns, offers, three automations | Implementation complete; live gate in progress | [Acceptance audit](phase-5-acceptance.md): migrations 036–047 applied in isolated staging, 97 PostgreSQL checks, 46 unit checks, production build/lint/typecheck, browser storage/cache checks and a synthetic hosted Auth/API/browser run. Real campaign notification receipt/open is the remaining phase gate. |
+| 5 | PWA, challenge-bound push, campaigns, offers, three automations | Complete within Phase 5 scope | [Acceptance audit](phase-5-acceptance.md): migrations 036–047 applied in staging, PostgreSQL/unit/browser checks, production build/lint/typecheck, hosted Auth/API/browser checks, real HTTPS Firebase receipt/open and denied-permission authenticated-card check. Persistent worker hosting remains a Phase 8 deployment gate. |
 | 6 | Manual WhatsApp templates/tasks/leases/consent | Not started | Opened and human-marked-sent remain distinct. |
 | 7 | Indexed direct reports and bounded exports | Not started | No report cache, refresh queue, Redis or incremental reporting aggregates. |
 | 8 | Billing, admin, privacy, Vercel/worker deployment and runbooks | Not started | Actual payment, recovery and deployment evidence required. |
 | 9 | Security, accessibility, load, devices and pilot readiness | Not started | Full acceptance audit, 15-minute load run and external pilot evidence required. |
 
-## Phase 5 implementation and staging verification (2026-09-25)
+## Phase 5 implementation and staging verification (2026-09-26)
 
 - Migrations 036–047 define scoped offers, claim intents/fulfillment, campaigns, per-device attempts, weekly frequency reservations, automation rules/runs, staff-owned test devices and validated public images. They are applied to the isolated staging Supabase project, which had no active businesses before migration.
 - Customer and owner routes implement C04 and O09–O12. The worker uses pg-boss/outbox with fresh eligibility checks and records provider acceptance separately from observed clicks. The PWA caches public shell assets only; optional own-card summaries are bounded and cleared on account changes.
-- Local verification passed 97 PostgreSQL checks, 46 unit checks, typecheck, lint, production build and browser storage/cache checks. A synthetic hosted Auth/PostgREST/API/browser run passed offer isolation, claim intent, zero-consent campaign audience and cancellation, then archived its cafe and removed its users. The real Chrome/Firebase campaign test is tracked in [the Phase 5 acceptance audit](phase-5-acceptance.md).
+- Local verification passed PostgreSQL, unit and browser storage/cache checks, typecheck, lint and a production build. A synthetic hosted Auth/PostgREST/API/browser run passed offer isolation, claim intent, zero-consent campaign audience and cancellation, then archived its cafe and removed its users. A persistent-profile Chrome check on HTTPS received and opened a real Firebase campaign test message; a separate signed-in member opened a usable card after notification permission was denied. See [the Phase 5 acceptance audit](phase-5-acceptance.md).
 
 ## Phase 4 audited (2026-09-25)
 

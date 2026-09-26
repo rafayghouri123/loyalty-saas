@@ -117,6 +117,23 @@ export async function testPhase5({client,test}) {
     assert.equal((await client.query('select count(*) from public.delivery_attempts where campaign_recipient_id=$1 and attempted_at is not null',[delivery.recipientId])).rows[0].count,'0');
     await memberCall('set_consent',[member.id,'push','marketing',true,policy,randomUUID()]);
   });
+  await test('Phase 5 revoked devices are suppressed before provider dispatch',async()=>{
+    const campaignId=await newCampaign();
+    const delivery=await workerCall('worker_claim_campaign_delivery');
+    assert.equal(delivery.campaignId,campaignId);assert.equal(delivery.attempts.length,2);
+    for(const item of delivery.attempts){
+      await client.query("update public.push_devices set status='revoked',revoked_at=clock_timestamp() where id=$1",[item.deviceId]);
+      assert.equal(await workerCall('worker_campaign_attempt_ready',[item.attemptId]),null);
+      assert.equal((await client.query('select state,error_code,attempted_at from public.delivery_attempts where id=$1',
+        [item.attemptId])).rows[0].error_code,'device_revoked');
+      await client.query("update public.push_devices set status='active',revoked_at=null where id=$1",[item.deviceId]);
+    }
+    const state=(await client.query('select status,suppression_reason from public.campaign_recipients where id=$1',
+      [delivery.recipientId])).rows[0];
+    assert.equal(state.status,'suppressed');assert.equal(state.suppression_reason,'device_revoked');
+    assert.equal((await client.query('select count(*) from public.delivery_attempts where campaign_recipient_id=$1 and attempted_at is not null',
+      [delivery.recipientId])).rows[0].count,'0');
+  });
   await test('Phase 5 two-device acceptance and observed click remain separate metrics',async()=>{
     const campaignId=await newCampaign();
     const delivery=await workerCall('worker_claim_campaign_delivery');

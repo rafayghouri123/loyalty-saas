@@ -46,6 +46,19 @@ describe('campaign provider dispatch',()=>{
   expect(query.mock.calls.find(([sql])=>sql.includes('worker_finish_campaign_attempt'))?.[1])
    .toEqual([attemptId,'provider_accepted',expect.any(String),null]);
  });
+ it('does not send when the validity window expires after a device passes the database recheck',async()=>{
+  const {item,ready,attemptId}=fixture();let claims=0;
+  const query=vi.fn(async(sql:string)=>{
+   if(sql.includes('worker_claim_campaign_delivery'))return {rows:[{delivery:claims++===0?item:null}]};
+   if(sql.includes('worker_campaign_attempt_ready'))return {rows:[{ready:{...ready,expiresAt:new Date(Date.now()-1000).toISOString()}}]};
+   return {rows:[{}]};
+  });
+  const send=vi.fn(async()=>randomUUID());
+  await dispatchCampaigns({query} as unknown as pg.Pool,{key:()=>key,send} as CampaignSender);
+  expect(send).not.toHaveBeenCalled();
+  expect(query.mock.calls.find(([sql])=>sql.includes('worker_finish_campaign_attempt'))?.[1])
+   .toEqual([attemptId,'failed',null,'expired']);
+ });
  it('keeps ambiguous provider failures unknown, so no blind retry can duplicate a send',async()=>{
   const {item,ready,attemptId}=fixture();let claims=0;
   const query=vi.fn(async(sql:string,params?:unknown[])=>{

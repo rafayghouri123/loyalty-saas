@@ -149,6 +149,18 @@ async function main(){
    const delivered=(await sql.query('select status from public.campaign_test_requests where id=$1',[test.requestId])).rows[0];
    assert.equal(delivered.status,'provider_accepted');
    console.log('PASS real Firebase foreground campaign test received and opened in Chrome; provider accepted separately');
+   stage='browser:denied-permission-loyalty';
+   const cdp=await customerContext.newCDPSession(page);
+   await cdp.send('Browser.setPermission',{permission:{name:'notifications'},setting:'denied',
+    origin:process.env.PHASE4_TEST_WEB_URL});
+   await page.goto('/app/notifications');
+   await page.getByRole('button',{name:'Enable notifications'}).click();
+   await page.getByText('Notifications are off. You can still use all your loyalty cards.').waitFor();
+   await page.goto('/app');
+   await page.getByRole('link',{name:'Open card'}).click();
+   await page.getByRole('button',{name:'Get checkout code'}).waitFor();
+   assert.equal(await page.evaluate(()=>Notification.permission),'denied');
+   console.log('PASS denied browser notifications leave an authenticated customer card usable');
   }
   await browser.close();browser=null;
   console.log('PASS real Supabase Auth/PostgREST/API/browser offer isolation, claim intent, zero-consent campaign and cancellation');

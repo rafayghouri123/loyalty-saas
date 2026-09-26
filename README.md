@@ -1,6 +1,6 @@
 # Cafe loyalty SaaS
 
-Implementation in progress against `LOYALTY_SAAS_IMPLEMENTATION_BRIEF.md` v1.6. Phases 0–4 are accepted within their documented scope; Phase 5 is implemented and undergoing live notification acceptance. **The full application and production launch are not complete.** Track the launch scope in [implementation status](docs/implementation-status.md), [43-screen checklist](docs/screen-checklist.md), and [78-table checklist](docs/schema-checklist.md).
+Implementation in progress against `LOYALTY_SAAS_IMPLEMENTATION_BRIEF.md` v1.6. Phases 0–5 are accepted within their documented scope; the Phase 5 HTTPS Firebase notification receipt/open check passed. **The full application and production launch are not complete.** Track the launch scope in [implementation status](docs/implementation-status.md), [43-screen checklist](docs/screen-checklist.md), and [78-table checklist](docs/schema-checklist.md).
 
 Phase 0 engineering acceptance completed on 2026-09-15. See the [acceptance audit](docs/phase-0-acceptance.md) for exact evidence, including deployed Google login, atomic profile/outbox processing, real Firebase foreground acknowledgement, and the remaining later release gates.
 Phase 4 acceptance covers double earn slots and purchase-qualified referrals; see the [requirement audit](docs/phase-4-acceptance.md).
@@ -67,7 +67,7 @@ Install Playwright's Chromium browser with `npx.cmd playwright install chromium`
 - A separate pg-boss worker whose durable enqueue and outbox marker use the same PostgreSQL transaction. It validates authoritative event data and restricts runtime database privileges.
 - One PWA manifest/registration with a public-only offline cache and optional bounded, user-scoped local card summaries. Data-only foreground challenges, encrypted token storage, same-session acknowledgements, generation checks and sign-out revocation are implemented. `/app/notifications` is the authenticated device settings route. Campaigns, offers and the three automations are persisted and worker-driven; real staging campaign receipt is audited separately.
 
-The fixture Auth schema in the SQL harness does not prove Supabase JWT handling, Auth, PostgREST or Storage. The full two-cafe accounting seed, all financial features, persistence and server enforcement for the 43 screen layouts, push/WhatsApp, reporting, billing/privacy, deployment and launch hardening are still required. See [development runbook](docs/development-runbook.md) for the precise boundaries and local database strategy.
+The fixture Auth schema in the SQL harness does not itself prove Supabase JWT handling, Auth, PostgREST or Storage; the hosted checks in the phase audits cover the tested provider boundaries. Full launch still requires the two-cafe accounting seed, Phase 6–9 features, persistent push-worker hosting, billing/privacy, reporting, deployment and launch hardening. See [development runbook](docs/development-runbook.md) for the precise boundaries and local database strategy.
 
 ## Hosting
 
