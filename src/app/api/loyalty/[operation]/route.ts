@@ -48,8 +48,10 @@ export async function POST(request: Request, context: { params: Promise<{ operat
       }
       case 'resolve': {
         const input = contracts.resolve.parse(body); const raw = randomToken();
-        rpcName = 'resolve_scanner'; rpcArgs = { p_business: input.businessId, p_branch: input.branchId,
-          p_kind: input.kind, p_raw: input.rawValue, p_context_hash: hashToken(raw) }; privateResult = { raw }; break;
+        rpcName = input.programmeId ? 'resolve_scanner_for_programme' : 'resolve_scanner';
+        rpcArgs = { p_business: input.businessId, p_branch: input.branchId,
+          p_kind: input.kind, p_raw: input.rawValue, p_context_hash: hashToken(raw),
+          ...(input.programmeId ? {p_programme:input.programmeId} : {}) }; privateResult = { raw }; break;
       }
       case 'preview-purchase': {
         const { checkoutContext, ...input } = contracts.purchasePreview.parse(body);
@@ -118,6 +120,10 @@ export async function POST(request: Request, context: { params: Promise<{ operat
       case 'configuration': {
         const input = contracts.configuration.parse(body); rpcName = 'loyalty_configuration'; rpcArgs = { p_business: input.businessId }; break;
       }
+      case 'programme-configuration': {
+        const input = contracts.selectedProgramme.parse(body); rpcName = 'programme_configuration';
+        rpcArgs = { p_business: input.businessId, p_programme: input.programmeId }; break;
+      }
       case 'save-programme': {
         const { businessId, ...input } = contracts.programmeDraft.parse(body); rpcName = 'save_programme_version';
         rpcArgs = { p_business: businessId, p_input: input, p_correlation: correlationId }; break;
@@ -132,8 +138,9 @@ export async function POST(request: Request, context: { params: Promise<{ operat
         rpcArgs = { p_business: input.businessId, p_version: input.programmeVersionId, p_row_version: input.rowVersion, p_correlation: correlationId }; break;
       }
       case 'programme-status': {
-        const input = contracts.programmeStatus.parse(body); rpcName = 'set_programme_status';
-        rpcArgs = { p_business: input.businessId, p_status: input.status, p_row_version: input.rowVersion, p_correlation: correlationId }; break;
+        const input = contracts.programmeStatus.parse(body); rpcName = input.programmeId ? 'set_programme_status_for' : 'set_programme_status';
+        rpcArgs = { p_business: input.businessId, ...(input.programmeId ? {p_programme:input.programmeId} : {}),
+          p_status: input.status, p_row_version: input.rowVersion, p_correlation: correlationId }; break;
       }
       case 'save-reward': {
         const { businessId, ...input } = contracts.rewardDraft.parse(body); rpcName = 'save_reward_draft';

@@ -24,6 +24,7 @@ export const initialProgrammeSchema = z.strictObject({ businessId: uuid, rowVers
   rewardDescription: optionalText(500), rewardTerms: text(10, 2000), rewardBranchIds: branchIds, estimatedCostPaisa: amount.nullable(),
 }).refine(v => v.type === 'stamps' ? v.stampsPerPurchase !== null && BigInt(v.stampsPerPurchase) <= BigInt(v.maxBaseUnitsPerPurchase) && v.spendStepPaisa === null && v.unitsPerStep === null
   : v.stampsPerPurchase === null && v.spendStepPaisa !== null && BigInt(v.spendStepPaisa) >= 100n && v.unitsPerStep !== null, 'Check mode-specific earning fields.');
+export const publishAdditionalProgrammeSchema = z.strictObject({ businessId: uuid, programmeId: uuid });
 export const inviteSchema = z.strictObject({ businessId: uuid, email: z.email().max(254).transform(s => s.toLowerCase()), role: z.enum(['manager', 'cashier']), branchIds, ...permissions })
   .refine(v => v.role !== 'cashier' || !(v.canManageCampaigns || v.canContactCustomers || v.canReverseTransactions || v.canExportReports), 'Cashiers cannot have manager permissions.');
 export const staffSchema = z.strictObject({ businessId: uuid, id: uuid, rowVersion: integer(1, 2147483647), action: z.enum(['revoke', 'revoke_invite', 'edit']),
@@ -52,10 +53,10 @@ export const policySchema = z.object({ id: uuid, kind: z.string(), version: z.st
 export const configurationSchema = z.object({ plans: z.array(z.object({ id: uuid, name: z.string(), pricePaisa: z.string(), billingPeriod: z.string(), trialDays: z.number(), branchLimit: z.number(), staffLimit: z.number() })), policies: z.array(policySchema) });
 export const cafeSchema = z.object({ id: uuid, slug: z.string(), name: z.string(), description: z.string().nullable(), accentHex: z.string(), status: z.string(), timezone: z.string(), canJoin: z.boolean(),
   menuUrl: z.string().nullable(), reviewUrl: z.string().nullable(), phone: z.string().nullable(),
-  programme: z.object({ id: uuid, type: z.enum(['stamps', 'points']), name: z.string(), terms: z.string(), minimumSpendPaisa: z.string(), stampsPerPurchase: z.string().nullable(), spendStepPaisa: z.string().nullable(), unitsPerStep: z.string().nullable(), maxBaseUnitsPerPurchase: z.string() }),
+  programme: z.object({ id: uuid, programmeId: uuid.optional(), type: z.enum(['stamps', 'points']), name: z.string(), terms: z.string(), minimumSpendPaisa: z.string(), stampsPerPurchase: z.string().nullable(), spendStepPaisa: z.string().nullable(), unitsPerStep: z.string().nullable(), maxBaseUnitsPerPurchase: z.string() }),
   branches: z.array(z.object({ id: uuid, name: z.string(), address: z.string(), city: z.string(), mapsUrl: z.string().nullable(), hours: z.array(z.object({ weekday: z.number(), opensAt: z.string(), closesAt: z.string() })) })),
   rewards: z.array(z.object({ id: uuid, title: z.string(), unitCost: z.string(), description: z.string(), terms: z.string(), branchIds: z.array(uuid) })) });
-export const membershipSchema = z.object({ id: uuid, businessId: uuid, businessName: z.string(), slug: z.string(), accentHex: z.string(), displayName: z.string(), status: z.string(), joinedAt: z.string(), joinedBranchId: uuid.nullable(), units: z.string(), ledgerVersion: z.string(), programmeType: z.enum(['stamps', 'points']) });
+export const membershipSchema = z.object({ id: uuid, businessId: uuid, businessName: z.string(), slug: z.string(), accentHex: z.string(), displayName: z.string(), status: z.string(), joinedAt: z.string(), joinedBranchId: uuid.nullable(), units: z.string(), ledgerVersion: z.string(), programmeId: uuid.optional(), programmeName: z.string().optional(), programmeType: z.enum(['stamps', 'points']) });
 export const workspacesSchema = z.array(z.object({ id: uuid, name: z.string(), role: z.enum(['owner', 'manager', 'cashier']), status: z.string(), branches: z.array(z.object({ id: uuid, name: z.string() })) }));
 export type Cafe = z.infer<typeof cafeSchema>;
 export type Configuration = z.infer<typeof configurationSchema>;

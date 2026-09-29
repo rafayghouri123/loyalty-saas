@@ -11,5 +11,6 @@
     "outDir": "dist/worker",
     "rootDir": "src"
   },
-  "include": ["src/worker/**/*.ts"]
+  "include": ["src/worker/**/*.ts"],
+  "exclude": ["src/worker/vercel-*.ts"]
 }

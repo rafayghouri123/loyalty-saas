@@ -48,7 +48,8 @@ describe('campaign provider dispatch',()=>{
  });
  it('does not send when the validity window expires after a device passes the database recheck',async()=>{
   const {item,ready,attemptId}=fixture();let claims=0;
-  const query=vi.fn(async(sql:string)=>{
+  const query=vi.fn(async(sql:string,params?:unknown[])=>{
+   void params;
    if(sql.includes('worker_claim_campaign_delivery'))return {rows:[{delivery:claims++===0?item:null}]};
    if(sql.includes('worker_campaign_attempt_ready'))return {rows:[{ready:{...ready,expiresAt:new Date(Date.now()-1000).toISOString()}}]};
    return {rows:[{}]};

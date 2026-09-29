@@ -1,8 +1,8 @@
 import { redirect } from 'next/navigation';
 import { verifiedUser } from '@/lib/db/server';
 import { StatePanel } from '@/components/ui/state-panel';
-import Link from 'next/link';
 import { workspacesSchema } from '@/features/tenancy/contracts';
+import { BusinessWorkspaces } from '@/features/tenancy/business-shell';
 export const dynamic='force-dynamic';
 export default async function Workspace(){
   const {unavailable,user,client}=await verifiedUser();
@@ -11,8 +11,10 @@ export default async function Workspace(){
   const {data,error}=await client.rpc('my_workspaces');
   if(error) throw new Error('Workspaces could not be loaded. Please sign in again.');
   const workspaces=workspacesSchema.parse(data);
-  const admin=await client.rpc('my_admin_access');
-  return <main id="main" className="container"><h1>Your workspaces</h1>{!workspaces.length&&<p>No active staff assignment. Create a business or accept your invitation.</p>}
-    <div className="card-grid">{workspaces.map(w=><section className="screen-panel" key={w.id}><h2>{w.name}</h2><p>{w.role} · {w.branches.map(b=>b.name).join(', ')}</p><Link className="button" href={w.role==='cashier'?`/staff/${w.id}`:`/dashboard/${w.id}`}>{w.role==='cashier'?'Open scanner':'Open dashboard'}</Link></section>)}</div>
-    <nav className="actions"><Link href="/dashboard/onboarding">Create business</Link><Link href="/app">My loyalty cards</Link><Link href="/auth/mfa">Authenticator</Link><Link href="/app/notifications">Device and sign out</Link>{!admin.error&&admin.data===true&&<Link href="/admin">Admin</Link>}</nav></main>;
+  const [admin,creation]=await Promise.all([client.rpc('my_admin_access'),client.rpc('can_bootstrap_business')]);
+  // Admin discovery itself requires MFA; ordinary/new business sessions may be AAL1.
+  if(admin.error&&admin.error.message!=='mfa_required') throw new Error('Business account access could not be checked. Please retry.');
+  if(creation.error||typeof creation.data!=='boolean') throw new Error('Business creation access could not be checked. Please retry.');
+  if(!workspaces.length&&admin.data!==true&&creation.data) redirect('/dashboard/onboarding');
+  return <BusinessWorkspaces workspaces={workspaces} admin={admin.data===true} canCreateBusiness={creation.data}/>;
 }

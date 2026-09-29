@@ -1,0 +1,12 @@
+node_modules
+.next
+.git
+.vercel
+.env*
+.local
+.tools
+dist
+test-results
+playwright-report
+CODING_AGENT_START_PROMPT.md
+LOYALTY_SAAS_IMPLEMENTATION_BRIEF.md

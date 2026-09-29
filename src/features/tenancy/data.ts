@@ -10,14 +10,21 @@ export async function publicConfiguration() {
   if (error) return { plans: [], policies: [] };
   return configurationSchema.parse(data);
 }
-export async function readCafe(slug: string) {
+export async function readCafe(slug: string, programmeId?: string) {
   if (!/^[a-z0-9][a-z0-9-]{1,48}[a-z0-9]$/u.test(slug)) notFound();
+  if (programmeId && !z.uuid().safeParse(programmeId).success) notFound();
   const client = await createUserClient();
   if (!client) notFound();
-  const { data, error } = await client.rpc('public_business', { p_slug: slug });
+  const { data, error } = programmeId ? await client.rpc('public_programme', { p_slug: slug, p_programme: programmeId })
+    : await client.rpc('public_business', { p_slug: slug });
   if (error) throw new Error('Cafe details could not be loaded.');
   if (!data) notFound();
   return cafeSchema.parse(data);
+}
+export async function readCafeProgrammes(slug:string) {
+  const client=await createUserClient();if(!client)notFound();
+  const {data,error}=await client.rpc('public_programmes',{p_slug:slug});if(error)throw new Error('Programmes could not be loaded.');
+  return z.array(z.object({id:z.uuid(),name:z.string(),type:z.enum(['stamps','points']),programmeVersionId:z.uuid(),rewardCount:z.number()})).parse(data);
 }
 export async function customerData(next = '/app') {
   const auth = await verifiedUser();

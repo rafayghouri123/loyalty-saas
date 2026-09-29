@@ -4,10 +4,13 @@ import { getIdentity } from '@/lib/config';
 import { PwaRegistration } from '@/components/pwa-registration';
 import Link from 'next/link';
 import { fixturesEnabled } from '@/features/screens/fixture-gate';
+import { connection } from 'next/server';
 
 export const metadata: Metadata = { title: { default: 'Cafe loyalty', template: '%s · Cafe loyalty' }, description: 'One shared loyalty app for Pakistani cafes and their customers.' };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  // Per-request CSP nonces must never be reused from prerendered HTML.
+  await connection();
   const identity = getIdentity();
   return <html lang="en"><body><a className="skip-link" href="#main">Skip to content</a>
     {!identity.configured && <div className="setup-note">Development preview · Product identity and live services are not configured</div>}

@@ -14,6 +14,13 @@ import { testAuthEmail } from './test-auth-email.mjs';
 import { testLoyalty } from './test-loyalty.mjs';
 import { testPhase4 } from './test-phase4.mjs';
 import { testPhase5 } from './test-phase5.mjs';
+import { testPhase6 } from './test-phase6.mjs';
+import { testPhase7 } from './test-phase7.mjs';
+import { testPhase8 } from './test-phase8.mjs';
+import {testVercelWorker} from './test-vercel-worker.mjs';
+import {testMultiProgrammes} from './test-multi-programmes.mjs';
+import {testPhase9Security} from './test-phase9-security.mjs';
+import {rehearseRestore} from './rehearse-restore.mjs';
 import { generateSchemaDiagram } from './generate-schema-diagram.mjs';
 
 const {startWorker}=await import('../src/worker/runtime.ts');
@@ -27,6 +34,8 @@ const port=server.address().port;
 await new Promise(resolve=>server.close(resolve));
 const password=randomBytes(24).toString('hex');
 const postgres=new EmbeddedPostgres({databaseDir:directory,port,user:'postgres',password,authMethod:'scram-sha-256',persistent:true,createPostgresUser:false,initdbFlags:['--encoding=UTF8','--locale=C'],postgresFlags:['-h','127.0.0.1'],onLog:()=>{},onError:()=>{}});
+const getPgClient=postgres.getPgClient.bind(postgres);
+postgres.getPgClient=(database='postgres',host='127.0.0.1')=>getPgClient(database,host);
 let client;let worker;
 const passed=[];
 const pushKey={id:'integration-v1',bytes:randomBytes(32)},pushMessages=[];
@@ -49,8 +58,43 @@ try{
     alter table storage.objects enable row level security;
     grant usage on schema storage to authenticated,anon;
     grant select,insert,update,delete on storage.objects to authenticated,anon;`);
-  for(const migration of readdirSync('supabase/migrations').filter(v=>v.endsWith('.sql')).sort()) await client.query(readFileSync(`supabase/migrations/${migration}`,'utf8'));
+  const historical={user:randomUUID(),business:randomUUID(),programme:randomUUID(),card:randomUUID()};
+  for(const migration of readdirSync('supabase/migrations').filter(v=>v.endsWith('.sql')).sort()) {
+    if(migration.startsWith('202609290064')) {
+      await client.query('begin');
+      await client.query('insert into auth.users(id,email,email_confirmed_at) values($1,$2,now())',
+        [historical.user,`historic-${historical.user}@example.invalid`]);
+      await client.query('insert into public.profiles(user_id,auth_user_id,display_name) values($1,$1,$2)',
+        [historical.user,'Historical card holder']);
+      await client.query('insert into public.businesses(id,slug,display_name,created_by) values($1,$2,$3,$4)',
+        [historical.business,`historic-${historical.business.slice(0,8)}`,'Historical migration cafe',historical.user]);
+      await client.query("insert into public.business_users(business_id,user_id,staff_display_name,staff_email,role) values($1,$2,$3,$4,'owner')",
+        [historical.business,historical.user,'Historical owner',`historic-${historical.user}@example.invalid`]);
+      await client.query("insert into public.loyalty_programmes(id,business_id,type,name) values($1,$2,'stamps','Original stamps')",
+        [historical.programme,historical.business]);
+      await client.query('insert into public.memberships(id,business_id,customer_user_id,display_name) values($1,$2,$3,$4)',
+        [historical.card,historical.business,historical.user,'Historical card holder']);
+      await client.query('insert into public.balances(business_id,membership_id,units,ledger_version,row_version) values($1,$2,0,0,3)',
+        [historical.business,historical.card]);
+      await client.query('commit');
+    }
+    await client.query(readFileSync(`supabase/migrations/${migration}`,'utf8'));
+  }
+  await test('multi-programme migration backfills an existing card without changing its balance',async()=>{
+    const {rows}=await client.query('select m.programme_id,p.is_primary,b.units,b.ledger_version,b.row_version from public.memberships m join public.loyalty_programmes p on p.id=m.programme_id join public.balances b on b.membership_id=m.id where m.id=$1',[historical.card]);
+    assert.deepEqual(rows,[{programme_id:historical.programme,is_primary:true,units:'0',ledger_version:'0',row_version:3}]);
+  });
   await test('migration applies to a real PostgreSQL server',async()=>{const result=await client.query('show server_version');console.log(`PostgreSQL ${result.rows[0].server_version}`);});
+  await test('separate monitor role can observe health without customer reads, queue mutation or worker control',async()=>{
+    await client.query('begin');
+    try{
+      await client.query('set local role loyalty_monitor');
+      assert.equal(typeof (await client.query('select public.worker_health_status() state')).rows[0].state.workerFresh,'boolean');
+      const privileges=(await client.query("select has_table_privilege(current_user,'public.profiles','SELECT') profiles,has_table_privilege(current_user,'public.outbox_events','UPDATE') outbox,has_function_privilege(current_user,'public.worker_vercel_disable()','EXECUTE') control,rolsuper,rolbypassrls from pg_roles where rolname=current_user")).rows[0];
+      assert(Object.values(privileges).every(value=>value===false));
+      await assert.rejects(client.query('select public.worker_vercel_disable()'),{code:'42501'});
+    }finally{await client.query('rollback');}
+  });
   const a=randomUUID(),b=randomUUID(),c=randomUUID(),unverified=randomUUID(),anonymous=randomUUID();
   await client.query('insert into auth.users(id,email_confirmed_at,is_anonymous) values($1,now(),false),($2,now(),false),($3,now(),false),($4,null,false),($5,now(),true)',[a,b,c,unverified,anonymous]);
   const asUser=async(id,sql,params=[])=>{
@@ -142,13 +186,23 @@ try{
     const bad=(await client.query("insert into public.outbox_events(event_type,event_key,schema_version,payload) values('profile.created',$1,1,'{}') returning id",[randomUUID()])).rows[0];
     await assert.rejects(client.query('select public.worker_observe_profile($1)',[bad.id]),{code:'22023'});
   });
+  await worker.stop();worker=undefined;
+  await testPhase9Security({client,workerUrl,test});
+  await testVercelWorker({client,workerUrl,test});
+  worker=await startWorker({connectionString:workerUrl,ssl:false,onError:code=>errors.push(code),challengeSender:{key:id=>{assert.equal(id,pushKey.id);return pushKey;},send:async message=>{pushMessages.push(message);}}});
   await generateDbTypes(client);
   await generateSchemaDiagram(client);
+  if(!process.argv.includes('--phase8')){
   await testPushChallenges({client,postgres,test,users:[a,b,c],password,port,key:pushKey,messages:pushMessages});
   await testTenancy({client,postgres,test});
   await testLoyalty({client,postgres,test});
   await testPhase4({client,postgres,test});
   await testPhase5({client,test});
+  await testPhase6({client,postgres,test});
+  await testPhase7({client,postgres,test,password,port});
+  }
+  await testPhase8({client,postgres,test,password,port});
+  await testMultiProgrammes({client,test});
   await testAuthEmail({client,postgres,test});
   await test('delegated pre-release plan and policy publication is versioned and idempotent',async()=>{
     await publishDefaults(client); await publishDefaults(client);
@@ -160,9 +214,13 @@ try{
     assert.equal((await client.query("select count(*) from public.businesses where slug in ('test-cafe-a','test-cafe-b') and status='draft'")).rows[0].count,'2');
     assert.equal((await client.query("select count(*) from public.memberships where customer_user_id='a2000000-0000-4000-8000-000000000003'")).rows[0].count,'2');
   });
+  if(process.argv.includes('--restore')){await rehearseRestore({client,postgres,stopWorker:async()=>{await worker.stop();worker=undefined;},directory,port,password,test});client=undefined;}
   console.log(`Integration: ${passed.length} checks passed. Auth adapter is SQL-only; provider integration remains pending.`);
 }finally{
   if(worker)await worker.stop();
   if(client)await client.end();
+  // The Windows child may already have exited; embedded-postgres.stop otherwise
+  // subscribes to an exit event that cannot fire again.
+  if(postgres.process && postgres.process.exitCode!==null)postgres.process=undefined;
   await postgres.stop();
 }

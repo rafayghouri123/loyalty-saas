@@ -1,5 +1,6 @@
 node_modules/
 .next/
+.vercel/
 .env*
 !.env.example
 .tools/
@@ -11,3 +12,9 @@ dist/
 *.tsbuildinfo
 supabase/.temp/
 supabase/.branches/
+src/app/.well-known/workflow/
+/.swc
+monitoring/vercel/shared/
+monitoring/vercel/.next/
+monitoring/vercel/app/.well-known/workflow/
+monitoring/vercel/next-env.d.ts

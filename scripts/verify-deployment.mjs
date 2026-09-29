@@ -38,7 +38,10 @@ for (const intent of ['customer', 'business']) {
   assert.ok(authorization.hostname.endsWith('.supabase.co'), 'Expected hosted Supabase authorization endpoint.');
   assert.equal(authorization.pathname, '/auth/v1/authorize');
   assert.equal(authorization.searchParams.get('provider'), 'google');
-  assert.equal(authorization.searchParams.get('redirect_to'), `${origin}/auth/callback?next=${intent === 'business' ? '/workspace' : '/app'}`);
+  const callback=new URL(authorization.searchParams.get('redirect_to'));
+  assert.equal(callback.origin,origin);assert.equal(callback.pathname,'/auth/callback');
+  assert.equal(callback.searchParams.get('next'),intent==='business'?'/workspace':'/app');
+  assert.equal([...callback.searchParams].length,1);
   const provider = await fetch(authorization, { redirect: 'manual', signal: AbortSignal.timeout(20_000) });
   assert.ok([302, 303, 307, 308].includes(provider.status), 'Supabase did not redirect to Google.');
   const google = new URL(provider.headers.get('location'));
@@ -58,4 +61,35 @@ for (const requestOrigin of ['https://example.com', null]) {
   privateResponse(response);
 }
 console.log('PASS foreign and missing origin rejection');
+const policies=[];
+let staticScript;
+for (let attempt=0;attempt<2;attempt++) {
+  const response=await request('/auth/login',{headers:{'x-nonce':'untrusted-probe','content-security-policy':"script-src 'unsafe-inline'"}});
+  assert.equal(response.status,200);
+  privateResponse(response);
+  const policy=response.headers.get('content-security-policy')??'';
+  const scriptPolicy=policy.split(';').find(part=>part.trim().startsWith('script-src '))??'';
+  assert(scriptPolicy.includes("'strict-dynamic'")&&!scriptPolicy.includes('unsafe-inline')&&!scriptPolicy.includes('unsafe-eval'));
+  assert(!policy.includes('untrusted-probe'));
+  assert(policy.includes("frame-ancestors 'none'")&&policy.includes("object-src 'none'"));
+  const nonce=scriptPolicy.match(/'nonce-([^']+)'/u)?.[1];assert(nonce);
+  const html=await response.text();assert(html.includes(`nonce="${nonce}"`),'Rendered scripts must carry the response nonce.');
+  staticScript??=html.match(/src="([^"\s]*\/_next\/static\/[^"\s]+\.js[^"\s]*)"/u)?.[1];
+  policies.push(policy);
+}
+assert.notEqual(policies[0],policies[1],'CSP nonce must be fresh for each response.');
+for (const path of ['/ui-fixtures/screens/S01','/ui-fixtures/phase8']) {
+  const response=await request(path);assert.equal(response.status,404);privateResponse(response);
+}
+console.log('PASS enforced fresh CSP nonce, spoofed-header overwrite, rendered script nonce and deployed fixture isolation');
+for(const path of ['/sw.js','/manifest.webmanifest']) {
+  const response=await request(path);assert.equal(response.status,200);
+  const cache=response.headers.get('cache-control')??'';
+  assert.match(cache,/max-age=0\b/u);assert.match(cache,/must-revalidate/u);
+}
+assert(staticScript,'Versioned application script must be present.');
+const asset=new URL(staticScript,origin);assert.equal(asset.origin,origin);
+const assetResponse=await request(asset.pathname+asset.search);assert.equal(assetResponse.status,200);
+assert.match(assetResponse.headers.get('cache-control')??'',/\bimmutable\b/u);
+console.log('PASS deployed service-worker/manifest revalidation and immutable versioned JavaScript');
 console.log('Interactive sign-in/session, authenticated RPC, worker delivery, device push and ingress spoofing remain separate checks.');

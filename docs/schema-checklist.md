@@ -57,33 +57,43 @@ Required tables from section 24. Fields/constraints, FKs, enums, grants/RLS, gen
 | automation_rules | 202609250036, 040–041 | Three kinds, versioned templates and scoped settings | Business/reward/offer FKs | Owner/authorized manager RPC | Catalog generated | Version, permission and consent |
 | automation_runs | 202609250036, 040–041 | Deduplicated reward episode, inactivity episode and annual birthday | Business/rule/member/offer FKs | Worker RPC; staff aggregate | Catalog generated | Catch-up, crossing and recurrence |
 | contact_frequency_reservations | 202609250036, 039, 041 | Serialized business/platform weekly caps | Business/member/campaign/run FKs | Worker RPC only | Catalog generated | Quiet hours, cap and expiry |
-| whatsapp_templates | Pending | Pending | Pending | Pending | Pending | Pending |
-| followup_batches | Pending | Pending | Pending | Pending | Pending | Pending |
-| followup_tasks | Pending | Pending | Pending | Pending | Pending | Pending |
-| followup_events | Pending | Pending | Pending | Pending | Pending | Pending |
+| whatsapp_templates | 202609260048–050 | Exact grammar, trimmed Unicode bounds, active/version/row version | Business/creator | Owner AAL2/contact manager RPC; no raw browser grants | Catalog generated | Grammar, literal Unicode rendering, stale edits, existing snapshots |
+| followup_batches | 202609260048–050 | Audience rules, selected reward/offer, version snapshot, idempotency key/hash, count-only preview | Same-business template/offer/reward | Scoped RPC only | Catalog generated | Consent exclusions, real public links, replay and changed-input conflict |
+| followup_tasks | 202609260048–049 | Six honest states; unique batch/member, contact version, five-minute lease, nullable content after retention | Same-business batch/member/assignee/lease owner | Current contact permission and member branch scope | Catalog generated | Concurrent open/takeover, 24-hour gate, consent/contact change, no push allowance consumption |
+| followup_events | 202609260048–049 | Append-only actor/action/time; only old free-text note redaction allowed | Same-business task, actor profile | Scoped history; worker-only bounded retention RPC | Catalog generated | Mutation denied; opened versus human-marked sent; 90-day cleanup |
 | plans | 202609210004 | Unique code; published configuration projection | Platform scope | No browser writes | Catalog generated | Local seed/configuration |
 | plan_versions | 202609210004 | Published immutable; PKR decimal-string output; quota bounds | Plan FK | Published safe projection | Catalog generated | Immutability and bootstrap selection |
 | subscriptions | 202609210004–005 | Trial/period dates; effective grace/cancel checks; billing Phase 8 | Business/plan-version FKs | Owner read; atomic bootstrap | Catalog generated | Expiry without scheduler; trial grace/cancellation |
-| invoices | Pending | Pending | Pending | Pending | Pending | Pending |
-| payment_submissions | Pending | Pending | Pending | Pending | Pending | Pending |
-| payment_events | Pending | Pending | Pending | Pending | Pending | Pending |
+| invoices | 054–057 | Positive PKR immutable price/plan/period snapshot; unique subscription interval/reference | Business/subscription/version FKs; due=start | Raw grants denied; owner/admin RPC | Catalog generated | Anchored issue/concurrent confirmation/correction tested |
+| payment_submissions | 054–055 | Exact tenant/invoice/uploader proof; request hash/idempotency; pending review | Composite invoice/proof FKs | Raw denied; owner AAL2 submission; guarded private proof | Catalog generated | Evidence cannot activate; direct cross-tenant denial |
+| payment_events | 054–057 | Append-only positive confirm/correction; unique corrected event and global normalized confirmed reference | Exact invoice/submission/event composite FKs | Fresh-MFA billing-only RPC | Catalog generated | Concurrent replay, amount/reference/correction/paid-interval tests |
 | platform_admins | 202609130001, 202609210009 | Active support grant; AAL2/recent authentication | Profile FK | No browser table access; narrow admin RPC | Catalog generated | Unauthorized/stale-AMR denied; owner transfer |
-| support_access_grants | Pending | Pending | Pending | Pending | Pending | Pending |
-| privacy_requests | Pending | Pending | Pending | Pending | Pending | Pending |
+| support_access_grants | 054–055 | Own admin/time/reason/scope; 15/30/60-minute maximum | Tenant/admin/audit links | Support AAL2/fresh start; current read/end | Catalog generated | Scoped data, wrong-admin denial and immediate end |
+| privacy_requests | 056–059 | Idempotency; resumable lease/Auth deletion; ownership blocker; retained categories | Profile/membership/export links | Requester-only operations/download; scoped admin recovery; worker effects | Catalog generated | >10k multipart export; Auth failure/retry; post-backup deletion replay |
 | audit_events | 202609130001 | Append-only; action safe-change schemas pending | Actor/business; support FK pending | No browser/worker table grants | Catalog generated | Immutable and atomic creation passed |
 | idempotency_records | Pending | Pending | Pending | Pending | Pending | Pending |
 | outbox_events | 202609130001 | Initial versioned event/uniqueness | Optional business FK | Narrow worker functions only | Catalog generated | Atomic enqueue/rollback/recovery passed |
 | checkout_contexts | Pending | Pending | Pending | Pending | Pending | Pending |
 | push_registration_challenges | Added with candidate/dispatch fields | Private; ack-only browser RPC | 5-minute/replacement/receipt gates | Wrong session/concurrent replay tested | Generated | Local tests; provider pending |
 | rate_limit_buckets | Added | No browser grants | Atomic fixed/cooldown gates | Concurrent/direct RPC tested | Generated | Worker cleanup tested; monitoring pending |
-| export_requests | Pending | Pending | Pending | Pending | Pending | Pending |
-| export_artifacts | Pending | Pending | Pending | Pending | Pending | Pending |
+| export_requests | 202609260052 | Requester/session; idempotency key/hash; one running/user; processing token; 24-hour expiry | Business/requester; private column/link/upload manifests | Raw access denied; scoped request/status RPCs | Catalog generated | Concurrent replay, limits, pg-boss, revocation and failure passed |
+| export_artifacts | 202609260052 | One immutable artifact/request; bounded bytes and expiry | Export request; private Storage path | Raw access denied; bounded no-store download | Catalog generated | Real private Storage, anonymous denial, permission recheck and purge passed |
 | policy_documents | 202609210004 | Published immutable kind/version/body | Platform scope | Exact published-version public projection | Catalog generated | Stale acceptance and mutation denied |
 | referral_visit_events | Pending | Pending | Pending | Pending | Pending | Pending |
 | job_effect_receipts | 202609130001 | Initial append-only/dedup constraints | Optional business FK | Narrow worker functions only | Catalog generated | Duplicate processing and bad payload denial passed |
 | operational_checks | 202609130001 | Name/status allowlist | Platform-wide | Heartbeat function only | Catalog generated | Worker writes heartbeat; monitoring integration pending |
-| platform_settings | Pending | Pending | Pending | Pending | Pending | Pending |
+| platform_settings | 054–055 | Allowlisted validated defaults/commercial inputs; audited changes | Current admin updater | No raw browser access; support fresh-MFA RPC | Catalog generated | Real configuration gates and exact provider validation |
 
 Phase 2 supporting table: `app_private.media_uploads` binds a short-lived original path to its owner, media asset and expiry; browser table access is denied. Generated diagram includes public schema relationships. Later-phase rows remain pending, including financial source invariants; this is not full section-24 acceptance.
 
 Migration `202609220012` adds private `auth_email_key` and `auth_email_grants`: browser/gateway/worker raw access denied, unique hashed grant, recipient/callback binding, encrypted short-lived payload and expiry cleanup. Hook execution is limited to `supabase_auth_admin`; gateway issuance and worker retrieval/completion are separately granted. Three PostgreSQL/worker tests and live direct-OTP denial, Resend sandbox delivery, actual callback and replay tests passed. Public RPC signatures are catalog-generated; private secrets are deliberately absent from browser types.
+## Phase 7 reporting and exports
+
+- `202609260051`: scoped role/filter helpers; single-snapshot source totals and rows; five-second PostgREST-hoisted timeout; tenant/branch/date and qualifying-history indexes. Reports never allocate a shared balance to a branch, and no report cache table exists.
+- `202609260052`: RLS/revoked raw grants for `export_requests`/`export_artifacts`; private fixed column registry, encrypted links and reserved upload paths; original session/requester, idempotency hash/key, unique running request per user, processing token and expiry. Outbox/receipt processing uses the restricted worker role and private Storage.
+- `202609260053`: additive report-configuration correction avoids a variable/whole-row ambiguity; owner and assigned-manager filter options are regression-tested.
+- Direct fixtures validate date/page/selector/grant boundaries, accounting/reversal net totals, two-device versus member counts, unknown cost, processing-time activity, shared limits, concurrent request/worker behavior, 10,001-row failure, revocation and artifact purge. Catalog types and schema diagram are regenerated by the real PostgreSQL harness.
+
+## Phase 8 persistence and recovery
+
+Migrations 054–059 add billing, independent platform capabilities/support grants, bounded account JSON exports, resumable deletion, configured operational retention and operator-only restore replay. No customer ledger/payment timer exists. Direct SQL relationships, immutable snapshots/events, concurrency and runtime/browser grants are checked by test-phase8.mjs. Catalog types and the schema diagram are regenerated from the real migrated harness. Hosted Auth/Storage evidence and outstanding worker/backup inputs are recorded in phase-8-acceptance.md.

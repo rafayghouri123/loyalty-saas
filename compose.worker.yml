@@ -1,0 +1,35 @@
+services:
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    init: true
+    restart: unless-stopped
+    stop_grace_period: 45s
+    env_file:
+      - .env.worker
+    volumes:
+      - ${FIREBASE_SECRET_FILE:?Set a Firebase secret file path}:/run/secrets/firebase-admin.json:ro
+    environment:
+      GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/firebase-admin.json
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'
+  monitor:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    init: true
+    restart: unless-stopped
+    env_file:
+      - .env.worker
+    command: [node, scripts/monitor-worker.mjs]
+    healthcheck:
+      disable: true
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'

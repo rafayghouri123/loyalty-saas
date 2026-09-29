@@ -3,17 +3,23 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=24.21.0 <25" },
+  "engines": {
+    "node": ">=24.21.0 <25"
+  },
   "scripts": {
     "dev": "next dev --hostname 127.0.0.1",
     "preview:screens": "node scripts/preview-screens.mjs",
     "worker:dev": "tsx watch --env-file-if-exists=.env.local src/worker/main.ts",
-    "build": "next build && tsc -p tsconfig.worker.json",
+    "build": "next build && node scripts/verify-worker-build.mjs && tsc -p tsconfig.worker.json",
     "start": "next start --hostname 127.0.0.1",
     "worker:start": "node --env-file-if-exists=.env.local dist/worker/worker/main.js",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "next typegen && tsc --noEmit && tsc -p tsconfig.worker.json --noEmit",
     "test": "vitest run --config vitest.config.ts",
+    "test:monitor": "node --test scripts/test-monitor-delivery.mjs",
+    "monitor:build": "npm --prefix monitoring/vercel run build",
+    "monitor:test": "npm --prefix monitoring/vercel test",
+    "verify:monitor:discord": "node --env-file-if-exists=.env.local scripts/verify-discord-monitor.mjs",
     "test:integration": "node --import tsx --env-file-if-exists=.env.local scripts/test-integration.mjs",
     "test:e2e": "playwright test",
     "db:types": "node scripts/db-local.mjs types",
@@ -22,7 +28,21 @@
     "db:stop": "node scripts/db-local.mjs stop",
     "db:setup:staging": "node scripts/setup-staging.mjs",
     "setup:keys": "node scripts/setup-keys.mjs",
-    "dependencies:check": "node scripts/check-dependencies.mjs"
+    "setup:whatsapp-origin": "node --import tsx --env-file-if-exists=.env.local scripts/configure-whatsapp-origin.mjs",
+    "test:phase6:provider": "node --import tsx --env-file-if-exists=.env.local scripts/run-provider-acceptance.mjs --phase6",
+    "test:phase7:provider": "node --import tsx --env-file-if-exists=.env.local scripts/run-provider-acceptance.mjs --phase7",
+    "test:phase7:browser": "playwright test tests/e2e/phase7.spec.ts",
+    "test:phase8": "node --import tsx --env-file-if-exists=.env.local scripts/test-integration.mjs --phase8",
+    "test:restore": "node --import tsx --env-file-if-exists=.env.local scripts/test-integration.mjs --phase8 --restore",
+    "test:phase8:browser": "playwright test tests/e2e/phase8.spec.ts",
+    "security:bundles": "node --env-file-if-exists=.env.local scripts/scan-bundles.mjs",
+    "dependencies:check": "node scripts/check-dependencies.mjs",
+    "test:phase8:provider": "node --import tsx --env-file-if-exists=.env.local scripts/run-provider-acceptance.mjs --phase8",
+    "test:phase9:load": "node --import tsx scripts/test-phase9-load.mjs",
+    "test:phase9:smoke": "node --import tsx scripts/test-phase9-load.mjs --smoke",
+    "test:phase9:browser": "playwright test tests/e2e/phase9.spec.ts",
+    "licenses:check": "node scripts/audit-licenses.mjs",
+    "pilot:dashboard": "node scripts/build-pilot-dashboard.mjs"
   },
   "dependencies": {
     "@fontsource/inter": "5.3.0",
@@ -46,12 +66,18 @@
     "recharts": "3.10.1",
     "sharp": "0.35.4",
     "tailwind-merge": "3.7.0",
+    "workflow": "4.8.9",
     "zod": "4.6.4"
+  },
+  "overrides": {
+    "@workflow/core": {
+      "nanoid": "5.1.16"
+    },
+    "undici": "7.30.0"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
     "@next/eslint-plugin-next": "16.3.5",
-    "embedded-postgres": "18.4.0-beta.17",
     "@playwright/test": "1.63.0",
     "@tailwindcss/postcss": "4.3.3",
     "@types/node": "24.13.4",
@@ -59,6 +85,8 @@
     "@types/qrcode": "1.5.6",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
+    "axe-core": "4.13.0",
+    "embedded-postgres": "18.4.0-beta.17",
     "eslint": "10.10.0",
     "supabase": "2.117.0",
     "tailwindcss": "4.3.3",

@@ -43,7 +43,7 @@ try{
   step='runtime roles';
   let env=readFileSync('.env.local','utf8');
   const set=(name,value)=>{const line=`${name}=${JSON.stringify(value)}`;const pattern=new RegExp(`^${name}=.*$`,'m');env=pattern.test(env)?env.replace(pattern,()=>line):env.trimEnd()+'\n'+line+'\n';};
-  const roles=[['loyalty_worker_login','loyalty_worker','WORKER_DATABASE_URL','5432'],['loyalty_web_login','loyalty_web_gateway','WEB_GATEWAY_DATABASE_URL','6543']];
+  const roles=[['loyalty_worker_login','loyalty_worker','WORKER_DATABASE_URL','5432'],['loyalty_web_login','loyalty_web_gateway','WEB_GATEWAY_DATABASE_URL','6543'],['loyalty_monitor_login','loyalty_monitor','MONITOR_DATABASE_URL','5432']];
   const pending=[];
   for(const [role,parent,variable,port]of roles){
     const exists=(await client.query('select 1 from pg_roles where rolname=$1',[role])).rowCount>0;

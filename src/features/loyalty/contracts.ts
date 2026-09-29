@@ -14,7 +14,7 @@ export const card = z.strictObject({ membershipId: uuid });
 export const ownerMember = z.strictObject({ businessId: uuid, membershipId: uuid });
 export const handle = card.extend({ rotate: z.boolean().default(false) });
 export const scannerCode = card.extend({ purpose: z.enum(['membership_lookup', 'redemption_lookup','offer_lookup']), intentId: uuid.optional() });
-export const resolve = z.strictObject({ businessId: uuid, branchId: uuid, kind: z.enum(['earningHandle', 'redemptionIntent', 'offerIntent','typedCode']), rawValue: z.string().min(8).max(512) });
+export const resolve = z.strictObject({ businessId: uuid, branchId: uuid, programmeId: uuid.optional(), kind: z.enum(['earningHandle', 'redemptionIntent', 'offerIntent','typedCode']), rawValue: z.string().min(8).max(512) });
 export const purchaseFields = z.strictObject({ recordedBillPaisa: money, eligibleSpendPaisa: money, qualifyingPurchaseConfirmed: z.boolean(), receiptReference: receipt, correctsPurchaseId: uuid.optional(),offerEligibleBeforeDiscountPaisa:money.optional() })
   .refine(v => BigInt(v.eligibleSpendPaisa) <= BigInt(v.recordedBillPaisa));
 export const purchasePreview = purchaseFields.safeExtend({ checkoutContext: context });
@@ -31,7 +31,9 @@ export const activity = z.strictObject({ businessId: uuid, branchId: uuid.nullab
 export const activityDetail = z.strictObject({ businessId: uuid, type: z.enum(['purchase','redemption']), id: uuid });
 export const reconciliation = z.strictObject({ businessId: uuid });
 export const configuration = reconciliation;
+export const selectedProgramme = reconciliation.extend({ programmeId: uuid });
 export const programmeDraft = z.strictObject({ businessId: uuid, rowVersion: z.number().int().positive(), name: z.string().trim().min(2).max(80),
+  programmeId: uuid.optional(),
   type: z.enum(['stamps','points']), minimumSpendPaisa: money, stampsPerPurchase: z.number().int().min(1).max(10).nullable(),
   spendStepPaisa: money.nullable(), unitsPerStep: z.number().int().min(1).max(1000).nullable(), maxBaseUnitsPerPurchase: z.number().int().min(1).max(100000),
   terms: z.string().trim().min(10).max(3000), effectiveAt: z.iso.datetime({ offset: true }) })
@@ -44,8 +46,8 @@ export const programmeExample = z.strictObject({ businessId: uuid, type: z.enum(
   exampleEligibleSpendPaisa: money }).refine(v => v.type==='stamps'
     ? v.stampsPerPurchase!==null && v.stampsPerPurchase<=v.maxBaseUnitsPerPurchase && v.spendStepPaisa===null && v.unitsPerStep===null
     : v.stampsPerPurchase===null && v.spendStepPaisa!==null && BigInt(v.spendStepPaisa)>=100n && v.unitsPerStep!==null);
-export const programmeStatus = z.strictObject({ businessId: uuid, status: z.enum(['published','paused']), rowVersion: z.number().int().positive() });
-export const rewardDraft = z.strictObject({ businessId: uuid, rewardId: uuid.optional(), rowVersion: z.number().int().positive().optional(), title: z.string().trim().min(2).max(80),
+export const programmeStatus = z.strictObject({ businessId: uuid, programmeId: uuid.optional(), status: z.enum(['published','paused']), rowVersion: z.number().int().positive() });
+export const rewardDraft = z.strictObject({ businessId: uuid, programmeId: uuid.optional(), rewardId: uuid.optional(), rowVersion: z.number().int().positive().optional(), title: z.string().trim().min(2).max(80),
   unitCost: z.number().int().min(1).max(1000000), description: z.string().trim().max(500).default(''), terms: z.string().trim().min(10).max(2000),
   estimatedCostPaisa: money.nullable(), branchIds: z.array(uuid).min(1).max(100).refine(ids => new Set(ids).size === ids.length) })
   .refine(v => Boolean(v.rewardId) === Boolean(v.rowVersion));

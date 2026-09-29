@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "cafes": [],
+  "fieldChecks": [
+    {"id":"android","label":"Physical Android Chrome install, camera, push and account switch","status":"pending","evidence":null},
+    {"id":"iphone","label":"Physical iPhone Safari/Home Screen install, camera, push and account switch","status":"pending","evidence":null},
+    {"id":"pakistan-networks","label":"Karachi, Lahore and Islamabad broadband/mobile measurements","status":"pending","evidence":null},
+    {"id":"matched-regions","label":"Equivalent Singapore and Mumbai stacks; final region decision","status":"pending","evidence":null},
+    {"id":"pilot-cafes","label":"Three to five participating cafes and observed friction review","status":"pending","evidence":null}
+  ]
+}

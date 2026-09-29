@@ -19,7 +19,7 @@ for (const [label, settings] of [
     const deadline = Date.now() + 30000;
     while (!ready && Date.now() < deadline && server.exitCode === null) await new Promise(resolve => setTimeout(resolve, 100));
     assert(ready, 'Isolated production server did not start');
-    for (const path of ['/ui-fixtures/screens', '/ui-fixtures/screens/O10?role=owner', '/ui-fixtures/forms', '/ui-fixtures/phase2?form=onboarding']) {
+    for (const path of ['/ui-fixtures/screens', '/ui-fixtures/screens/O10?role=owner', '/ui-fixtures/forms', '/ui-fixtures/phase2?form=onboarding', '/ui-fixtures/phase6?form=task', '/ui-fixtures/phase7', '/ui-fixtures/phase8']) {
       const response = await fetch(`http://127.0.0.1:3102${path}`);
       assert.equal(response.status, 404, `${label}: ${path}`);
       assert.match(response.headers.get('cache-control') ?? '', /no-store/);

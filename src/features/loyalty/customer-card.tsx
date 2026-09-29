@@ -9,17 +9,41 @@ type Reward = { id: string; title: string; description: string; terms: string; u
 type IntentStatus = { intentId:string;status:'active'|'expired'|'canceled'|'fulfilled'|'reversed';expiresAt:string;
   fulfilledAt:string|null;branchName:string|null;unitCost:string;balance:string };
 export type Card = { id: string; businessId: string; name: string; memberName: string; status: string; units: string; ledgerVersion: string;
-  programmeType: 'stamps' | 'points'; rewards: Reward[]; activity: { id: string; kind: string; units: string; occurredAt: string }[] };
+  programmeName?:string;programmeType: 'stamps' | 'points'; rewards: Reward[]; activity: { id: string; kind: string; units: string; occurredAt: string }[] };
+
+function useLiveCard(initial:Card) {
+  const [card,setCard]=useState(initial),[syncError,setSyncError]=useState('');
+  useEffect(()=>{
+    let active=true,pending=false;
+    async function sync(){
+      if(!active||pending||document.hidden||!navigator.onLine)return;
+      pending=true;
+      try{const current=await loyaltyRequest<Card>('card',{membershipId:initial.id});if(active){setCard(current);setSyncError('');}}
+      catch{if(active)setSyncError('Could not update the balance. Check your connection and use Refresh balance.');}
+      finally{pending=false;}
+    }
+    void sync();
+    const timer=window.setInterval(()=>void sync(),10000);
+    window.addEventListener('focus',sync);window.addEventListener('online',sync);
+    document.addEventListener('visibilitychange',sync);
+    return()=>{active=false;window.clearInterval(timer);window.removeEventListener('focus',sync);window.removeEventListener('online',sync);
+      document.removeEventListener('visibilitychange',sync);};
+  },[initial.id]);
+  async function refresh(){const current=await loyaltyRequest<Card>('card',{membershipId:initial.id});setCard(current);setSyncError('');}
+  return {card,setCard,refresh,syncError};
+}
 
 export function CardDetail({ initial }: { initial: Card }) {
   const online=useOnline();
-  const [card, setCard] = useState(initial), [qr, setQr] = useState(''), [code, setCode] = useState(''), [message, setMessage] = useState('');
+  const {card,refresh,syncError}=useLiveCard(initial);
+  const [qr, setQr] = useState(''), [code, setCode] = useState(''), [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
   useEffect(() => { void (async () => {
     try { const result = await loyaltyRequest<{ qrValue: string }>('handle', { membershipId: initial.id, rotate: false }); setQr(await QRCode.toDataURL(result.qrValue,{ margin: 2, width: 300 })); }
     catch (error) { setMessage(error instanceof Error ? error.message : 'Checkout QR unavailable.'); }
   })(); }, [initial.id]);
-  async function refresh() { const current = await loyaltyRequest<Card>('card', { membershipId: initial.id }); setCard(current); }
+  async function refreshBalance(){setBusy(true);try{await refresh();setMessage('Balance updated.');}
+    catch(error){setMessage(error instanceof Error?error.message:'Could not refresh the balance.');}finally{setBusy(false);}}
   async function getCode() {
     if (!navigator.onLine) { setMessage('Reconnect to generate a customer code.'); return; }
     setBusy(true); try { const result = await loyaltyRequest<{ code: string; expiresAt: string }>('scanner-code', { membershipId: card.id, purpose: 'membership_lookup' });
@@ -33,16 +57,17 @@ export function CardDetail({ initial }: { initial: Card }) {
     catch (error) { setMessage(error instanceof Error ? error.message : 'QR replacement failed.'); } finally { setBusy(false); }
   }
   const nextReward=card.rewards.find(reward=>BigInt(reward.unitCost)>BigInt(card.units))??card.rewards[0];
-  return <main id="main" className="container"><h1>{card.name}</h1><p>{card.memberName} · {card.status}</p>
+  return <main id="main" className="container"><h1>{card.name}</h1><p>{card.programmeName??'Loyalty programme'} · {card.memberName} · {card.status}</p>
     <section className="screen-panel"><h2>{card.units} {card.programmeType}</h2>
       {nextReward&&<p>{nextReward.available?`${nextReward.title} is available.`:`${nextReward.title}: ${(
         BigInt(nextReward.unitCost)-BigInt(card.units)).toString()} more ${card.programmeType} needed.`}</p>}
       {BigInt(card.units)<0n && <p>An adjustment changed your balance to {card.units} {card.programmeType}. New earnings will offset this before your next reward.</p>}
       {qr && <><Image unoptimized src={qr} width={300} height={300} alt="Personal earning QR for staff checkout"/><p>Show this at checkout.</p></>}
       <div className="actions"><button type="button" disabled={busy||!online} onClick={getCode}>Get checkout code</button><button type="button" disabled={busy||!online} onClick={rotate}>Replace checkout QR</button>
-        <button type="button" disabled={busy||!online} onClick={() => void refresh()}>Refresh balance</button></div>
+        <button type="button" disabled={busy||!online} onClick={() => void refreshBalance()}>Refresh balance</button></div>
+      <p className="microcopy">Balance updates automatically while this card is open.</p>
       {!online&&<p>Offline. Showing the last loaded balance; reconnect for new codes or transactions.</p>}
-      {code && <p>Customer code: <strong>{code}</strong></p>}<p role="status">{message}</p></section>
+      {code && <p>Customer code: <strong>{code}</strong></p>}<p role="status">{syncError||message}</p></section>
     <section className="screen-panel"><h2>Rewards</h2>{card.rewards.length===0 && <p>No rewards are published yet.</p>}
       {card.rewards.map(r => <p key={r.id}>{r.title} · {r.unitCost} {card.programmeType} · {r.available ? 'Available' : 'Keep earning'} · {r.terms}</p>)}
       <a href={`/app/cards/${card.id}/rewards`}>View rewards</a></section>
@@ -52,7 +77,8 @@ export function CardDetail({ initial }: { initial: Card }) {
 
 export function RewardIntent({ initial }: { initial: Card }) {
   const online=useOnline();
-  const [card, setCard] = useState(initial), [qr, setQr] = useState(''), [code, setCode] = useState(''),
+  const {card,setCard}=useLiveCard(initial);
+  const [qr, setQr] = useState(''), [code, setCode] = useState(''),
     [intentId, setIntentId] = useState(''), [expiry, setExpiry] = useState(''), [now, setNow] = useState(Date.now()),
     [settlement,setSettlement] = useState<IntentStatus|null>(null), [message, setMessage] = useState(''), [busy, setBusy] = useState(false);
   useEffect(() => { const timer = setInterval(() => setNow(Date.now()),1000); return () => clearInterval(timer); }, []);
@@ -83,7 +109,7 @@ export function RewardIntent({ initial }: { initial: Card }) {
   }
   async function cancel() { setBusy(true); try { await loyaltyRequest('cancel-intent',{ intentId }); setIntentId('');setSettlement(null);setQr('');setCode('');setMessage('Intent canceled. No units deducted.'); }
     catch (error) { setMessage(error instanceof Error ? error.message : 'Could not cancel.'); } finally { setBusy(false); } }
-  return <main id="main" className="container"><h1>{card.name} rewards</h1><p>Balance: {card.units} {card.programmeType}</p>
+  return <main id="main" className="container"><h1>{card.name} · {card.programmeName??'Loyalty programme'} rewards</h1><p>Balance: {card.units} {card.programmeType}</p>
     {card.rewards.map(r => <section className="screen-panel" key={r.id}><h2>{r.title}</h2><p>{r.description}</p><p>{r.unitCost} {card.programmeType} · {r.terms}</p>
       <p>Eligible at {r.eligibleBranches.join(', ')||'no active branches'}.</p>
       <button type="button" disabled={busy || !online || !r.available || card.status!=='active'} onClick={() => void create(r.id)}>Use this reward</button></section>)}

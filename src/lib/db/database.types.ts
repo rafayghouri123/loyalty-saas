@@ -84,7 +84,8 @@ Update: {
 };
 Relationships: [
 { foreignKeyName: "audit_events_actor_user_id_fkey"; columns: ["actor_user_id"]; referencedRelation: "profiles"; referencedColumns: ["user_id"]; isOneToOne: false },
-{ foreignKeyName: "audit_events_business_id_fkey"; columns: ["business_id"]; referencedRelation: "businesses"; referencedColumns: ["id"]; isOneToOne: false }
+{ foreignKeyName: "audit_events_business_id_fkey"; columns: ["business_id"]; referencedRelation: "businesses"; referencedColumns: ["id"]; isOneToOne: false },
+{ foreignKeyName: "audit_events_support_access_grant_id_fkey"; columns: ["support_access_grant_id"]; referencedRelation: "support_access_grants"; referencedColumns: ["id"]; isOneToOne: false }
 ];
 };
 "automation_rules": {
@@ -974,6 +975,273 @@ Relationships: [
 { foreignKeyName: "enrollment_acceptances_privacy_document_id_fkey"; columns: ["privacy_document_id"]; referencedRelation: "policy_documents"; referencedColumns: ["id"]; isOneToOne: false }
 ];
 };
+"export_artifacts": {
+Row: {
+"id": string;
+"export_request_id": string;
+"part_number": number;
+"storage_path": string;
+"bytes": number;
+"mime_type": "text/csv" | "application/json";
+"expires_at": string;
+"created_at": string;
+};
+Insert: {
+"id"?: string;
+"export_request_id": string;
+"part_number": number;
+"storage_path": string;
+"bytes": number;
+"mime_type": "text/csv" | "application/json";
+"expires_at": string;
+"created_at"?: string;
+};
+Update: {
+"id"?: string;
+"export_request_id"?: string;
+"part_number"?: number;
+"storage_path"?: string;
+"bytes"?: number;
+"mime_type"?: "text/csv" | "application/json";
+"expires_at"?: string;
+"created_at"?: string;
+};
+Relationships: [
+{ foreignKeyName: "export_artifacts_export_request_id_fkey"; columns: ["export_request_id"]; referencedRelation: "export_requests"; referencedColumns: ["id"]; isOneToOne: false }
+];
+};
+"export_requests": {
+Row: {
+"id": string;
+"business_id": string | null;
+"requested_by": string;
+"kind": "report" | "contacts" | "account";
+"filters": Json;
+"columns": Json;
+"status": "pending" | "processing" | "completed" | "failed" | "expired";
+"expires_at": string | null;
+"row_count": number | null;
+"error_code": string | null;
+"created_at": string;
+"updated_at": string;
+"row_version": number;
+"auth_session_id": string;
+"key": string;
+"request_hash": string;
+"processing_started_at": string | null;
+"processing_token": string | null;
+"privacy_request_id": string | null;
+};
+Insert: {
+"id"?: string;
+"business_id"?: string | null;
+"requested_by": string;
+"kind": "report" | "contacts" | "account";
+"filters": Json;
+"columns": Json;
+"status"?: "pending" | "processing" | "completed" | "failed" | "expired";
+"expires_at"?: string | null;
+"row_count"?: number | null;
+"error_code"?: string | null;
+"created_at"?: string;
+"updated_at"?: string;
+"row_version"?: number;
+"auth_session_id": string;
+"key": string;
+"request_hash": string;
+"processing_started_at"?: string | null;
+"processing_token"?: string | null;
+"privacy_request_id"?: string | null;
+};
+Update: {
+"id"?: string;
+"business_id"?: string | null;
+"requested_by"?: string;
+"kind"?: "report" | "contacts" | "account";
+"filters"?: Json;
+"columns"?: Json;
+"status"?: "pending" | "processing" | "completed" | "failed" | "expired";
+"expires_at"?: string | null;
+"row_count"?: number | null;
+"error_code"?: string | null;
+"created_at"?: string;
+"updated_at"?: string;
+"row_version"?: number;
+"auth_session_id"?: string;
+"key"?: string;
+"request_hash"?: string;
+"processing_started_at"?: string | null;
+"processing_token"?: string | null;
+"privacy_request_id"?: string | null;
+};
+Relationships: [
+{ foreignKeyName: "export_requests_business_id_fkey"; columns: ["business_id"]; referencedRelation: "businesses"; referencedColumns: ["id"]; isOneToOne: false },
+{ foreignKeyName: "export_requests_privacy_request_id_fkey"; columns: ["privacy_request_id"]; referencedRelation: "privacy_requests"; referencedColumns: ["id"]; isOneToOne: false },
+{ foreignKeyName: "export_requests_requested_by_fkey"; columns: ["requested_by"]; referencedRelation: "profiles"; referencedColumns: ["user_id"]; isOneToOne: false }
+];
+};
+"followup_batches": {
+Row: {
+"id": string;
+"business_id": string;
+"name": string;
+"template_id": string;
+"template_version": number;
+"template_body": string | null;
+"offer_id": string | null;
+"audience": "selected_members" | "inactive" | "reward_ready";
+"inactive_days": number | null;
+"target_reward_version_id": string | null;
+"created_by": string;
+"created_at": string;
+"idempotency_key": string;
+"request_hash": string;
+"preview_snapshot": Json;
+};
+Insert: {
+"id"?: string;
+"business_id": string;
+"name": string;
+"template_id": string;
+"template_version": number;
+"template_body"?: string | null;
+"offer_id"?: string | null;
+"audience": "selected_members" | "inactive" | "reward_ready";
+"inactive_days"?: number | null;
+"target_reward_version_id"?: string | null;
+"created_by": string;
+"created_at"?: string;
+"idempotency_key": string;
+"request_hash": string;
+"preview_snapshot": Json;
+};
+Update: {
+"id"?: string;
+"business_id"?: string;
+"name"?: string;
+"template_id"?: string;
+"template_version"?: number;
+"template_body"?: string | null;
+"offer_id"?: string | null;
+"audience"?: "selected_members" | "inactive" | "reward_ready";
+"inactive_days"?: number | null;
+"target_reward_version_id"?: string | null;
+"created_by"?: string;
+"created_at"?: string;
+"idempotency_key"?: string;
+"request_hash"?: string;
+"preview_snapshot"?: Json;
+};
+Relationships: [
+{ foreignKeyName: "followup_batches_business_id_fkey"; columns: ["business_id"]; referencedRelation: "businesses"; referencedColumns: ["id"]; isOneToOne: false },
+{ foreignKeyName: "followup_batches_business_id_offer_id_fkey"; columns: ["business_id","offer_id"]; referencedRelation: "offers"; referencedColumns: ["business_id","id"]; isOneToOne: false },
+{ foreignKeyName: "followup_batches_business_id_target_reward_version_id_fkey"; columns: ["business_id","target_reward_version_id"]; referencedRelation: "reward_versions"; referencedColumns: ["business_id","id"]; isOneToOne: false },
+{ foreignKeyName: "followup_batches_business_id_template_id_fkey"; columns: ["business_id","template_id"]; referencedRelation: "whatsapp_templates"; referencedColumns: ["business_id","id"]; isOneToOne: false },
+{ foreignKeyName: "followup_batches_created_by_fkey"; columns: ["created_by"]; referencedRelation: "profiles"; referencedColumns: ["user_id"]; isOneToOne: false }
+];
+};
+"followup_events": {
+Row: {
+"id": string;
+"business_id": string;
+"task_id": string;
+"action": "assigned" | "opened" | "marked_sent" | "skipped" | "opted_out" | "reassigned";
+"actor_user_id": string;
+"occurred_at": string;
+"note": string | null;
+};
+Insert: {
+"id"?: string;
+"business_id": string;
+"task_id": string;
+"action": "assigned" | "opened" | "marked_sent" | "skipped" | "opted_out" | "reassigned";
+"actor_user_id": string;
+"occurred_at"?: string;
+"note"?: string | null;
+};
+Update: {
+"id"?: string;
+"business_id"?: string;
+"task_id"?: string;
+"action"?: "assigned" | "opened" | "marked_sent" | "skipped" | "opted_out" | "reassigned";
+"actor_user_id"?: string;
+"occurred_at"?: string;
+"note"?: string | null;
+};
+Relationships: [
+{ foreignKeyName: "followup_events_actor_user_id_fkey"; columns: ["actor_user_id"]; referencedRelation: "profiles"; referencedColumns: ["user_id"]; isOneToOne: false },
+{ foreignKeyName: "followup_events_business_id_task_id_fkey"; columns: ["business_id","task_id"]; referencedRelation: "followup_tasks"; referencedColumns: ["business_id","id"]; isOneToOne: false }
+];
+};
+"followup_tasks": {
+Row: {
+"id": string;
+"business_id": string;
+"batch_id": string;
+"membership_id": string;
+"assigned_business_user_id": string | null;
+"state": "pending" | "assigned" | "opened" | "staff_marked_sent" | "skipped" | "opted_out";
+"rendered_body": string | null;
+"opened_at": string | null;
+"marked_sent_at": string | null;
+"marked_sent_by": string | null;
+"skip_reason": string | null;
+"last_contact_checked_at": string | null;
+"contact_version_at_creation": number;
+"lease_owner_business_user_id": string | null;
+"lease_expires_at": string | null;
+"created_at": string;
+"updated_at": string;
+"row_version": number;
+};
+Insert: {
+"id"?: string;
+"business_id": string;
+"batch_id": string;
+"membership_id": string;
+"assigned_business_user_id"?: string | null;
+"state"?: "pending" | "assigned" | "opened" | "staff_marked_sent" | "skipped" | "opted_out";
+"rendered_body"?: string | null;
+"opened_at"?: string | null;
+"marked_sent_at"?: string | null;
+"marked_sent_by"?: string | null;
+"skip_reason"?: string | null;
+"last_contact_checked_at"?: string | null;
+"contact_version_at_creation": number;
+"lease_owner_business_user_id"?: string | null;
+"lease_expires_at"?: string | null;
+"created_at"?: string;
+"updated_at"?: string;
+"row_version"?: number;
+};
+Update: {
+"id"?: string;
+"business_id"?: string;
+"batch_id"?: string;
+"membership_id"?: string;
+"assigned_business_user_id"?: string | null;
+"state"?: "pending" | "assigned" | "opened" | "staff_marked_sent" | "skipped" | "opted_out";
+"rendered_body"?: string | null;
+"opened_at"?: string | null;
+"marked_sent_at"?: string | null;
+"marked_sent_by"?: string | null;
+"skip_reason"?: string | null;
+"last_contact_checked_at"?: string | null;
+"contact_version_at_creation"?: number;
+"lease_owner_business_user_id"?: string | null;
+"lease_expires_at"?: string | null;
+"created_at"?: string;
+"updated_at"?: string;
+"row_version"?: number;
+};
+Relationships: [
+{ foreignKeyName: "followup_tasks_business_id_assigned_business_user_id_fkey"; columns: ["business_id","assigned_business_user_id"]; referencedRelation: "business_users"; referencedColumns: ["business_id","id"]; isOneToOne: false },
+{ foreignKeyName: "followup_tasks_business_id_batch_id_fkey"; columns: ["business_id","batch_id"]; referencedRelation: "followup_batches"; referencedColumns: ["business_id","id"]; isOneToOne: false },
+{ foreignKeyName: "followup_tasks_business_id_lease_owner_business_user_id_fkey"; columns: ["business_id","lease_owner_business_user_id"]; referencedRelation: "business_users"; referencedColumns: ["business_id","id"]; isOneToOne: false },
+{ foreignKeyName: "followup_tasks_business_id_membership_id_fkey"; columns: ["business_id","membership_id"]; referencedRelation: "memberships"; referencedColumns: ["business_id","id"]; isOneToOne: false },
+{ foreignKeyName: "followup_tasks_marked_sent_by_fkey"; columns: ["marked_sent_by"]; referencedRelation: "profiles"; referencedColumns: ["user_id"]; isOneToOne: false }
+];
+};
 "invitation_branches": {
 Row: {
 "business_id": string;
@@ -997,6 +1265,67 @@ Relationships: [
 { foreignKeyName: "invitation_branches_business_id_branch_id_fkey"; columns: ["business_id","branch_id"]; referencedRelation: "branches"; referencedColumns: ["business_id","id"]; isOneToOne: false },
 { foreignKeyName: "invitation_branches_business_id_fkey"; columns: ["business_id"]; referencedRelation: "businesses"; referencedColumns: ["id"]; isOneToOne: false },
 { foreignKeyName: "invitation_branches_business_id_invitation_id_fkey"; columns: ["business_id","invitation_id"]; referencedRelation: "staff_invitations"; referencedColumns: ["business_id","id"]; isOneToOne: false }
+];
+};
+"invoices": {
+Row: {
+"id": string;
+"business_id": string;
+"subscription_id": string;
+"plan_version_id": string;
+"reference": string;
+"amount_paisa": number;
+"currency": string;
+"period_start": string;
+"period_end": string;
+"due_at": string;
+"status": "draft" | "issued" | "paid" | "void" | "overdue";
+"issued_at": string | null;
+"paid_at": string | null;
+"created_at": string;
+"updated_at": string;
+"row_version": number;
+};
+Insert: {
+"id"?: string;
+"business_id": string;
+"subscription_id": string;
+"plan_version_id": string;
+"reference": string;
+"amount_paisa": number;
+"currency"?: string;
+"period_start": string;
+"period_end": string;
+"due_at": string;
+"status"?: "draft" | "issued" | "paid" | "void" | "overdue";
+"issued_at"?: string | null;
+"paid_at"?: string | null;
+"created_at"?: string;
+"updated_at"?: string;
+"row_version"?: number;
+};
+Update: {
+"id"?: string;
+"business_id"?: string;
+"subscription_id"?: string;
+"plan_version_id"?: string;
+"reference"?: string;
+"amount_paisa"?: number;
+"currency"?: string;
+"period_start"?: string;
+"period_end"?: string;
+"due_at"?: string;
+"status"?: "draft" | "issued" | "paid" | "void" | "overdue";
+"issued_at"?: string | null;
+"paid_at"?: string | null;
+"created_at"?: string;
+"updated_at"?: string;
+"row_version"?: number;
+};
+Relationships: [
+{ foreignKeyName: "invoices_business_id_fkey"; columns: ["business_id"]; referencedRelation: "businesses"; referencedColumns: ["id"]; isOneToOne: false },
+{ foreignKeyName: "invoices_business_id_subscription_id_fkey"; columns: ["business_id","subscription_id"]; referencedRelation: "subscriptions"; referencedColumns: ["business_id","id"]; isOneToOne: false },
+{ foreignKeyName: "invoices_plan_version_id_fkey"; columns: ["plan_version_id"]; referencedRelation: "plan_versions"; referencedColumns: ["id"]; isOneToOne: false }
 ];
 };
 "job_effect_receipts": {
@@ -1106,6 +1435,7 @@ Row: {
 "created_at": string;
 "updated_at": string;
 "row_version": number;
+"is_primary": boolean;
 };
 Insert: {
 "id"?: string;
@@ -1116,6 +1446,7 @@ Insert: {
 "created_at"?: string;
 "updated_at"?: string;
 "row_version"?: number;
+"is_primary"?: boolean;
 };
 Update: {
 "id"?: string;
@@ -1126,9 +1457,10 @@ Update: {
 "created_at"?: string;
 "updated_at"?: string;
 "row_version"?: number;
+"is_primary"?: boolean;
 };
 Relationships: [
-{ foreignKeyName: "loyalty_programmes_business_id_fkey"; columns: ["business_id"]; referencedRelation: "businesses"; referencedColumns: ["id"]; isOneToOne: true }
+{ foreignKeyName: "loyalty_programmes_business_id_fkey"; columns: ["business_id"]; referencedRelation: "businesses"; referencedColumns: ["id"]; isOneToOne: false }
 ];
 };
 "media_assets": {
@@ -1284,6 +1616,7 @@ Row: {
 "created_at": string;
 "updated_at": string;
 "row_version": number;
+"programme_id": string;
 };
 Insert: {
 "id"?: string;
@@ -1298,6 +1631,7 @@ Insert: {
 "created_at"?: string;
 "updated_at"?: string;
 "row_version"?: number;
+"programme_id": string;
 };
 Update: {
 "id"?: string;
@@ -1312,8 +1646,10 @@ Update: {
 "created_at"?: string;
 "updated_at"?: string;
 "row_version"?: number;
+"programme_id"?: string;
 };
 Relationships: [
+{ foreignKeyName: "membership_programme_business_fkey"; columns: ["business_id","programme_id"]; referencedRelation: "loyalty_programmes"; referencedColumns: ["business_id","id"]; isOneToOne: false },
 { foreignKeyName: "memberships_business_id_fkey"; columns: ["business_id"]; referencedRelation: "businesses"; referencedColumns: ["id"]; isOneToOne: false },
 { foreignKeyName: "memberships_business_id_joined_branch_id_fkey"; columns: ["business_id","joined_branch_id"]; referencedRelation: "branches"; referencedColumns: ["business_id","id"]; isOneToOne: false },
 { foreignKeyName: "memberships_customer_user_id_fkey"; columns: ["customer_user_id"]; referencedRelation: "profiles"; referencedColumns: ["user_id"]; isOneToOne: false }
@@ -1621,6 +1957,126 @@ Relationships: [
 { foreignKeyName: "outbox_events_business_id_fkey"; columns: ["business_id"]; referencedRelation: "businesses"; referencedColumns: ["id"]; isOneToOne: false }
 ];
 };
+"payment_events": {
+Row: {
+"id": string;
+"business_id": string;
+"invoice_id": string;
+"submission_id": string | null;
+"verified_amount_paisa": number;
+"method": "bank_transfer" | "merchant_wallet";
+"provider_or_bank": string;
+"external_reference": string;
+"verified_at": string;
+"verified_by": string;
+"event": "confirmed" | "correction";
+"corrects_event_id": string | null;
+"reason": string | null;
+"idempotency_key": string;
+"request_hash": string;
+"created_at": string;
+};
+Insert: {
+"id"?: string;
+"business_id": string;
+"invoice_id": string;
+"submission_id"?: string | null;
+"verified_amount_paisa": number;
+"method": "bank_transfer" | "merchant_wallet";
+"provider_or_bank": string;
+"external_reference": string;
+"verified_at"?: string;
+"verified_by": string;
+"event": "confirmed" | "correction";
+"corrects_event_id"?: string | null;
+"reason"?: string | null;
+"idempotency_key": string;
+"request_hash": string;
+"created_at"?: string;
+};
+Update: {
+"id"?: string;
+"business_id"?: string;
+"invoice_id"?: string;
+"submission_id"?: string | null;
+"verified_amount_paisa"?: number;
+"method"?: "bank_transfer" | "merchant_wallet";
+"provider_or_bank"?: string;
+"external_reference"?: string;
+"verified_at"?: string;
+"verified_by"?: string;
+"event"?: "confirmed" | "correction";
+"corrects_event_id"?: string | null;
+"reason"?: string | null;
+"idempotency_key"?: string;
+"request_hash"?: string;
+"created_at"?: string;
+};
+Relationships: [
+{ foreignKeyName: "payment_events_business_id_corrects_event_id_fkey"; columns: ["business_id","corrects_event_id"]; referencedRelation: "payment_events"; referencedColumns: ["business_id","id"]; isOneToOne: true },
+{ foreignKeyName: "payment_events_business_id_invoice_id_fkey"; columns: ["business_id","invoice_id"]; referencedRelation: "invoices"; referencedColumns: ["business_id","id"]; isOneToOne: false },
+{ foreignKeyName: "payment_events_business_id_submission_id_fkey"; columns: ["business_id","submission_id"]; referencedRelation: "payment_submissions"; referencedColumns: ["business_id","id"]; isOneToOne: false },
+{ foreignKeyName: "payment_events_verified_by_fkey"; columns: ["verified_by"]; referencedRelation: "profiles"; referencedColumns: ["user_id"]; isOneToOne: false }
+];
+};
+"payment_submissions": {
+Row: {
+"id": string;
+"business_id": string;
+"invoice_id": string;
+"claimed_amount_paisa": number;
+"method": "bank_transfer" | "merchant_wallet";
+"claimed_reference": string;
+"proof_asset_id": string | null;
+"submitted_by": string;
+"status": "pending_review" | "accepted" | "rejected";
+"review_note": string | null;
+"idempotency_key": string;
+"request_hash": string;
+"created_at": string;
+"updated_at": string;
+"row_version": number;
+};
+Insert: {
+"id"?: string;
+"business_id": string;
+"invoice_id": string;
+"claimed_amount_paisa": number;
+"method": "bank_transfer" | "merchant_wallet";
+"claimed_reference": string;
+"proof_asset_id"?: string | null;
+"submitted_by": string;
+"status"?: "pending_review" | "accepted" | "rejected";
+"review_note"?: string | null;
+"idempotency_key": string;
+"request_hash": string;
+"created_at"?: string;
+"updated_at"?: string;
+"row_version"?: number;
+};
+Update: {
+"id"?: string;
+"business_id"?: string;
+"invoice_id"?: string;
+"claimed_amount_paisa"?: number;
+"method"?: "bank_transfer" | "merchant_wallet";
+"claimed_reference"?: string;
+"proof_asset_id"?: string | null;
+"submitted_by"?: string;
+"status"?: "pending_review" | "accepted" | "rejected";
+"review_note"?: string | null;
+"idempotency_key"?: string;
+"request_hash"?: string;
+"created_at"?: string;
+"updated_at"?: string;
+"row_version"?: number;
+};
+Relationships: [
+{ foreignKeyName: "payment_submissions_business_id_invoice_id_fkey"; columns: ["business_id","invoice_id"]; referencedRelation: "invoices"; referencedColumns: ["business_id","id"]; isOneToOne: false },
+{ foreignKeyName: "payment_submissions_business_id_proof_asset_id_fkey"; columns: ["business_id","proof_asset_id"]; referencedRelation: "media_assets"; referencedColumns: ["business_id","id"]; isOneToOne: false },
+{ foreignKeyName: "payment_submissions_submitted_by_fkey"; columns: ["submitted_by"]; referencedRelation: "profiles"; referencedColumns: ["user_id"]; isOneToOne: false }
+];
+};
 "plan_versions": {
 Row: {
 "id": string;
@@ -1735,6 +2191,29 @@ Relationships: [
 { foreignKeyName: "platform_admins_user_id_fkey"; columns: ["user_id"]; referencedRelation: "profiles"; referencedColumns: ["user_id"]; isOneToOne: true }
 ];
 };
+"platform_settings": {
+Row: {
+"key": "grace_days" | "notification_retention_days" | "log_retention_days" | "referral_visit_retention_days" | "device_retention_days" | "temporary_retention_hours" | "billing_instructions" | "canonical_providers" | "financial_retention_policy" | "backup_coverage";
+"value": Json;
+"updated_at": string;
+"updated_by": string | null;
+};
+Insert: {
+"key": "grace_days" | "notification_retention_days" | "log_retention_days" | "referral_visit_retention_days" | "device_retention_days" | "temporary_retention_hours" | "billing_instructions" | "canonical_providers" | "financial_retention_policy" | "backup_coverage";
+"value": Json;
+"updated_at"?: string;
+"updated_by"?: string | null;
+};
+Update: {
+"key"?: "grace_days" | "notification_retention_days" | "log_retention_days" | "referral_visit_retention_days" | "device_retention_days" | "temporary_retention_hours" | "billing_instructions" | "canonical_providers" | "financial_retention_policy" | "backup_coverage";
+"value"?: Json;
+"updated_at"?: string;
+"updated_by"?: string | null;
+};
+Relationships: [
+{ foreignKeyName: "platform_settings_updated_by_fkey"; columns: ["updated_by"]; referencedRelation: "profiles"; referencedColumns: ["user_id"]; isOneToOne: false }
+];
+};
 "policy_documents": {
 Row: {
 "id": string;
@@ -1765,6 +2244,85 @@ Update: {
 };
 Relationships: [
 { foreignKeyName: "policy_documents_business_id_fkey"; columns: ["business_id"]; referencedRelation: "businesses"; referencedColumns: ["id"]; isOneToOne: false }
+];
+};
+"privacy_requests": {
+Row: {
+"id": string;
+"customer_user_id": string | null;
+"membership_id": string | null;
+"business_id": string | null;
+"kind": "export" | "delete_membership" | "delete_account";
+"status": "pending" | "processing" | "blocked" | "completed" | "failed";
+"requested_at": string;
+"completed_at": string | null;
+"result_storage_path": string | null;
+"result_expires_at": string | null;
+"error_code": string | null;
+"retained_categories": Json;
+"export_request_id": string | null;
+"idempotency_key": string;
+"request_hash": string;
+"processing_token": string | null;
+"processing_started_at": string | null;
+"database_completed_at": string | null;
+"auth_identity_id": string | null;
+"created_at": string;
+"updated_at": string;
+"row_version": number;
+};
+Insert: {
+"id"?: string;
+"customer_user_id"?: string | null;
+"membership_id"?: string | null;
+"business_id"?: string | null;
+"kind": "export" | "delete_membership" | "delete_account";
+"status"?: "pending" | "processing" | "blocked" | "completed" | "failed";
+"requested_at"?: string;
+"completed_at"?: string | null;
+"result_storage_path"?: string | null;
+"result_expires_at"?: string | null;
+"error_code"?: string | null;
+"retained_categories"?: Json;
+"export_request_id"?: string | null;
+"idempotency_key": string;
+"request_hash": string;
+"processing_token"?: string | null;
+"processing_started_at"?: string | null;
+"database_completed_at"?: string | null;
+"auth_identity_id"?: string | null;
+"created_at"?: string;
+"updated_at"?: string;
+"row_version"?: number;
+};
+Update: {
+"id"?: string;
+"customer_user_id"?: string | null;
+"membership_id"?: string | null;
+"business_id"?: string | null;
+"kind"?: "export" | "delete_membership" | "delete_account";
+"status"?: "pending" | "processing" | "blocked" | "completed" | "failed";
+"requested_at"?: string;
+"completed_at"?: string | null;
+"result_storage_path"?: string | null;
+"result_expires_at"?: string | null;
+"error_code"?: string | null;
+"retained_categories"?: Json;
+"export_request_id"?: string | null;
+"idempotency_key"?: string;
+"request_hash"?: string;
+"processing_token"?: string | null;
+"processing_started_at"?: string | null;
+"database_completed_at"?: string | null;
+"auth_identity_id"?: string | null;
+"created_at"?: string;
+"updated_at"?: string;
+"row_version"?: number;
+};
+Relationships: [
+{ foreignKeyName: "privacy_requests_business_id_membership_id_fkey"; columns: ["business_id","membership_id"]; referencedRelation: "memberships"; referencedColumns: ["business_id","id"]; isOneToOne: false },
+{ foreignKeyName: "privacy_requests_customer_user_id_fkey"; columns: ["customer_user_id"]; referencedRelation: "profiles"; referencedColumns: ["user_id"]; isOneToOne: false },
+{ foreignKeyName: "privacy_requests_export_request_id_fkey"; columns: ["export_request_id"]; referencedRelation: "export_requests"; referencedColumns: ["id"]; isOneToOne: false }
 ];
 };
 "profiles": {
@@ -2875,6 +3433,9 @@ Row: {
 "created_at": string;
 "updated_at": string;
 "row_version": number;
+"trial_ends_at": string | null;
+"operator_suspended": boolean;
+"cancellation_effective_at": string | null;
 };
 Insert: {
 "id"?: string;
@@ -2890,6 +3451,9 @@ Insert: {
 "created_at"?: string;
 "updated_at"?: string;
 "row_version"?: number;
+"trial_ends_at"?: string | null;
+"operator_suspended"?: boolean;
+"cancellation_effective_at"?: string | null;
 };
 Update: {
 "id"?: string;
@@ -2905,31 +3469,132 @@ Update: {
 "created_at"?: string;
 "updated_at"?: string;
 "row_version"?: number;
+"trial_ends_at"?: string | null;
+"operator_suspended"?: boolean;
+"cancellation_effective_at"?: string | null;
 };
 Relationships: [
 { foreignKeyName: "subscriptions_business_id_fkey"; columns: ["business_id"]; referencedRelation: "businesses"; referencedColumns: ["id"]; isOneToOne: true },
 { foreignKeyName: "subscriptions_plan_version_id_fkey"; columns: ["plan_version_id"]; referencedRelation: "plan_versions"; referencedColumns: ["id"]; isOneToOne: false }
 ];
 };
+"support_access_grants": {
+Row: {
+"id": string;
+"business_id": string;
+"admin_user_id": string;
+"reason": string;
+"starts_at": string;
+"expires_at": string;
+"revoked_at": string | null;
+"scope": "configuration" | "transaction_support";
+"created_at": string;
+};
+Insert: {
+"id"?: string;
+"business_id": string;
+"admin_user_id": string;
+"reason": string;
+"starts_at"?: string;
+"expires_at": string;
+"revoked_at"?: string | null;
+"scope": "configuration" | "transaction_support";
+"created_at"?: string;
+};
+Update: {
+"id"?: string;
+"business_id"?: string;
+"admin_user_id"?: string;
+"reason"?: string;
+"starts_at"?: string;
+"expires_at"?: string;
+"revoked_at"?: string | null;
+"scope"?: "configuration" | "transaction_support";
+"created_at"?: string;
+};
+Relationships: [
+{ foreignKeyName: "support_access_grants_admin_user_id_fkey"; columns: ["admin_user_id"]; referencedRelation: "profiles"; referencedColumns: ["user_id"]; isOneToOne: false },
+{ foreignKeyName: "support_access_grants_business_id_fkey"; columns: ["business_id"]; referencedRelation: "businesses"; referencedColumns: ["id"]; isOneToOne: false }
+];
+};
+"whatsapp_templates": {
+Row: {
+"id": string;
+"business_id": string;
+"name": string;
+"body": string;
+"version": number;
+"active": boolean;
+"created_by": string;
+"created_at": string;
+"updated_at": string;
+"row_version": number;
+};
+Insert: {
+"id"?: string;
+"business_id": string;
+"name": string;
+"body": string;
+"version"?: number;
+"active"?: boolean;
+"created_by": string;
+"created_at"?: string;
+"updated_at"?: string;
+"row_version"?: number;
+};
+Update: {
+"id"?: string;
+"business_id"?: string;
+"name"?: string;
+"body"?: string;
+"version"?: number;
+"active"?: boolean;
+"created_by"?: string;
+"created_at"?: string;
+"updated_at"?: string;
+"row_version"?: number;
+};
+Relationships: [
+{ foreignKeyName: "whatsapp_templates_business_id_fkey"; columns: ["business_id"]; referencedRelation: "businesses"; referencedColumns: ["id"]; isOneToOne: false },
+{ foreignKeyName: "whatsapp_templates_created_by_fkey"; columns: ["created_by"]; referencedRelation: "profiles"; referencedColumns: ["user_id"]; isOneToOne: false }
+];
+};
 }; Views: { [_ in never]: never }; Functions: {
 "accept_staff_invitation": { Args: {"p_token": string;"p_correlation_id": string}; Returns: Json };
+"account_export_access": { Args: {"p_artifact": string;"p_correlation": string}; Returns: Json };
 "acknowledge_push_challenge": { Args: {"p_challenge_id": string;"p_installation_id": string;"p_nonce": string}; Returns: Json };
+"act_on_followup_task": { Args: {"p_business": string;"p_task": string;"p_input": Json;"p_correlation": string}; Returns: Json };
+"act_on_member_contact": { Args: {"p_business": string;"p_membership": string;"p_input": Json;"p_correlation": string}; Returns: Json };
 "adjust_units": { Args: {"p_business": string;"p_membership": string;"p_units": number;"p_reason": string;"p_expected_version": number;"p_key": string;"p_correlation_id": string}; Returns: Json };
+"admin_change_plan": { Args: {"p_business": string;"p_plan": string;"p_invoice": string;"p_reason": string;"p_correlation": string}; Returns: Json };
+"admin_invoice_view": { Args: {"p_invoice": string}; Returns: Json };
+"admin_job_action": { Args: {"p_event": string;"p_action": string;"p_reason": string;"p_correlation": string}; Returns: Json };
+"admin_privacy_queue": { Args: {"p_page"?: number}; Returns: Json };
+"admin_read": { Args: {"p_kind": string;"p_filters"?: Json}; Returns: Json };
+"admin_retry_privacy": { Args: {"p_request": string;"p_reason": string;"p_correlation": string}; Returns: Json };
+"admin_tenant_action": { Args: {"p_business": string;"p_action": string;"p_reason": string;"p_correlation": string}; Returns: Json };
 "attach_brand_media": { Args: {"p_business_id": string;"p_asset_id": string;"p_row_version": number;"p_correlation_id": string}; Returns: Json };
 "auth_send_email_hook": { Args: {"event": Json}; Returns: Json };
 "automation_configuration": { Args: {"p_business": string}; Returns: Json };
+"billing_view": { Args: {"p_business": string;"p_invoice"?: string}; Returns: Json };
 "bootstrap_business": { Args: {"p_input": Json;"p_correlation_id": string}; Returns: Json };
 "business_access": { Args: {"p_business_id": string;"p_branch_id": string}; Returns: Json };
 "business_members": { Args: {"p_business_id": string;"p_branch_id"?: string;"p_offset"?: number}; Returns: Json };
+"business_programmes": { Args: {"p_business": string}; Returns: Json };
 "business_setup": { Args: {"p_business_id": string}; Returns: Json };
 "campaign_configuration": { Args: {"p_business": string}; Returns: Json };
 "campaign_test_devices": { Args: {"p_business": string}; Returns: Json };
+"can_bootstrap_business": { Args: Record<string, never>; Returns: boolean };
 "can_upload_media": { Args: {"p_path": string}; Returns: boolean };
 "cancel_offer_intent": { Args: {"p_intent": string}; Returns: Json };
 "cancel_redemption_intent": { Args: {"p_intent": string}; Returns: Json };
+"cancel_subscription_renewal": { Args: {"p_business": string;"p_correlation": string}; Returns: Json };
 "check_slug": { Args: {"p_slug": string}; Returns: boolean };
 "claim_offer": { Args: {"p_offer": string;"p_correlation": string}; Returns: Json };
 "complete_profile": { Args: {"p_display_name": string;"p_correlation_id": string}; Returns: Json };
+"correct_payment": { Args: {"p_event": string;"p_reason": string;"p_key": string;"p_correlation": string}; Returns: Json };
+"create_additional_programme": { Args: {"p_business": string;"p_input": Json;"p_correlation": string}; Returns: Json };
+"create_followup_batch": { Args: {"p_business": string;"p_input": Json;"p_key": string;"p_correlation": string}; Returns: Json };
 "create_offer_intent": { Args: {"p_claim": string;"p_token_hash": string;"p_correlation": string}; Returns: Json };
 "create_redemption_intent": { Args: {"p_membership": string;"p_reward_version": string;"p_token_hash": string;"p_correlation_id": string}; Returns: Json };
 "create_scanner_code": { Args: {"p_member": string;"p_purpose": string;"p_intent": string;"p_code_hash": string}; Returns: Json };
@@ -2939,6 +3604,7 @@ Relationships: [
 "database_readiness": { Args: Record<string, never>; Returns: boolean };
 "duplicate_campaign": { Args: {"p_business": string;"p_campaign": string;"p_correlation": string}; Returns: Json };
 "duplicate_offer": { Args: {"p_business": string;"p_offer": string;"p_correlation": string}; Returns: Json };
+"end_support_access": { Args: {"p_grant": string;"p_correlation": string}; Returns: Json };
 "finalize_redemption": { Args: {"p_context_hash": string;"p_expected_hash": string;"p_key": string;"p_correlation_id": string}; Returns: Json };
 "fulfill_offer": { Args: {"p_context_hash": string;"p_expected_hash": string;"p_key": string;"p_correlation": string}; Returns: Json };
 "gateway_authorize_auth_email": { Args: {"p_email": string;"p_email_subject": string;"p_ip_subject": string;"p_callback_url": string}; Returns: Json };
@@ -2946,6 +3612,7 @@ Relationships: [
 "gateway_limit_magic_link": { Args: {"p_email_subject": string;"p_ip_subject": string}; Returns: Json };
 "gateway_record_referral_visit": { Args: {"p_code": string}; Returns: boolean };
 "gateway_request_push_challenge": { Args: {"p_user": string;"p_session": string;"p_installation": string;"p_installation_secret_hash": string;"p_token_hash": string;"p_token_ciphertext": string;"p_key_id": string;"p_nonce_hash": string;"p_nonce_ciphertext": string}; Returns: Json };
+"get_report": { Args: {"p_business": string;"p_filters"?: Json}; Returns: Json };
 "get_value_result": { Args: {"p_business": string;"p_operation": string;"p_key": string}; Returns: Json };
 "join_business": { Args: {"p_input": Json;"p_correlation_id": string}; Returns: Json };
 "join_business_referral": { Args: {"p_input": Json;"p_grant_hash": string;"p_correlation_id": string}; Returns: Json };
@@ -2957,24 +3624,32 @@ Relationships: [
 "my_admin_access": { Args: Record<string, never>; Returns: boolean };
 "my_memberships": { Args: Record<string, never>; Returns: Json };
 "my_offers": { Args: {"p_business"?: string}; Returns: Json };
+"my_privacy_requests": { Args: Record<string, never>; Returns: Json };
 "my_referral_code": { Args: {"p_member": string}; Returns: Json };
 "my_workspaces": { Args: Record<string, never>; Returns: Json };
 "observe_campaign_click": { Args: {"p_recipient": string}; Returns: Json };
 "observe_notification_click": { Args: {"p_id": string}; Returns: Json };
 "offer_configuration": { Args: {"p_business": string}; Returns: Json };
 "offer_detail": { Args: {"p_offer": string}; Returns: Json };
+"open_whatsapp_task": { Args: {"p_business": string;"p_task": string;"p_row_version": number;"p_correlation": string}; Returns: Json };
 "operator_authorize_business": { Args: {"p_owner_id": string;"p_reason": string;"p_correlation_id": string}; Returns: Json };
 "operator_transfer_owner": { Args: {"p_business_id": string;"p_current_owner": string;"p_replacement_owner": string;"p_reason": string;"p_correlation_id": string}; Returns: Json };
 "owner_member_financial": { Args: {"p_business": string;"p_membership": string}; Returns: Json };
+"payment_proof_access": { Args: {"p_asset": string;"p_correlation": string}; Returns: Json };
 "preview_campaign_audience": { Args: {"p_business": string;"p_campaign": string}; Returns: Json };
+"preview_followup_batch": { Args: {"p_business": string;"p_input": Json}; Returns: Json };
 "preview_offer_fulfillment": { Args: {"p_context_hash": string}; Returns: Json };
 "preview_programme_example": { Args: {"p_business": string;"p_mode": string;"p_minimum": number;"p_stamps": number;"p_step": number;"p_per_step": number;"p_cap": number;"p_eligible": number}; Returns: Json };
 "preview_purchase": { Args: {"p_context_hash": string;"p_input": Json}; Returns: Json };
 "preview_redemption": { Args: {"p_context_hash": string}; Returns: Json };
+"programme_configuration": { Args: {"p_business": string;"p_programme": string}; Returns: Json };
 "promotion_configuration": { Args: {"p_business": string}; Returns: Json };
 "public_brand_media": { Args: {"p_slug": string}; Returns: Json };
 "public_business": { Args: {"p_slug": string}; Returns: Json };
 "public_configuration": { Args: Record<string, never>; Returns: Json };
+"public_programme": { Args: {"p_slug": string;"p_programme": string}; Returns: Json };
+"public_programmes": { Args: {"p_slug": string}; Returns: Json };
+"publish_additional_programme": { Args: {"p_business": string;"p_programme": string;"p_correlation": string}; Returns: Json };
 "publish_business": { Args: {"p_business_id": string;"p_row_version": number;"p_correlation_id": string}; Returns: Json };
 "publish_programme_version": { Args: {"p_business": string;"p_version": string;"p_row_version": number;"p_correlation": string}; Returns: Json };
 "publish_promotion": { Args: {"p_business": string;"p_promotion": string;"p_version": string;"p_row_version": number;"p_enable": boolean;"p_correlation": string}; Returns: Json };
@@ -2982,13 +3657,19 @@ Relationships: [
 "read_invitation": { Args: {"p_token": string}; Returns: Json };
 "read_policy": { Args: {"p_id": string}; Returns: Json };
 "reconcile_balances": { Args: {"p_business": string}; Returns: Json };
+"reconcile_payment": { Args: {"p_invoice": string;"p_input": Json;"p_key": string;"p_correlation": string}; Returns: Json };
 "record_purchase": { Args: {"p_context_hash": string;"p_input": Json;"p_correlation_id": string}; Returns: Json };
 "referral_configuration": { Args: {"p_business": string;"p_start": string;"p_end": string;"p_status": string;"p_branch": string;"p_page": number;"p_size": number}; Returns: Json };
+"report_configuration": { Args: {"p_business": string}; Returns: Json };
+"report_export_status": { Args: {"p_business": string;"p_export": string;"p_download"?: boolean;"p_correlation"?: string}; Returns: Json };
 "request_campaign_test": { Args: {"p_business": string;"p_campaign": string;"p_device": string}; Returns: Json };
+"request_privacy": { Args: {"p_kind": string;"p_membership": string;"p_key": string;"p_correlation": string}; Returns: Json };
+"request_report_export": { Args: {"p_business": string;"p_filters": Json;"p_columns": Json;"p_key": string;"p_correlation": string}; Returns: Json };
 "resend_staff_invitation": { Args: {"p_business_id": string;"p_invitation_id": string;"p_row_version": number;"p_correlation_id": string}; Returns: Json };
 "reserve_media": { Args: {"p_business_id": string;"p_kind": string;"p_mime_type": string;"p_bytes": number;"p_correlation_id": string}; Returns: Json };
 "resolve_referral": { Args: {"p_code": string}; Returns: Json };
 "resolve_scanner": { Args: {"p_business": string;"p_branch": string;"p_kind": string;"p_raw": string;"p_context_hash": string}; Returns: Json };
+"resolve_scanner_for_programme": { Args: {"p_business": string;"p_branch": string;"p_kind": string;"p_raw": string;"p_context_hash": string;"p_programme": string}; Returns: Json };
 "reverse_purchase": { Args: {"p_business": string;"p_purchase": string;"p_reason": string;"p_expected_version": number;"p_key": string;"p_correlation_id": string}; Returns: Json };
 "reverse_redemption": { Args: {"p_business": string;"p_redemption": string;"p_reason": string;"p_expected_version": number;"p_key": string;"p_correlation_id": string}; Returns: Json };
 "revoke_push_installation": { Args: {"p_installation_id": string}; Returns: Json };
@@ -2999,10 +3680,12 @@ Relationships: [
 "save_initial_programme": { Args: {"p_business_id": string;"p_input": Json;"p_correlation_id": string}; Returns: Json };
 "save_membership_contact": { Args: {"p_membership_id": string;"p_input": Json;"p_correlation_id": string}; Returns: Json };
 "save_offer": { Args: {"p_business": string;"p_input": Json;"p_correlation": string}; Returns: Json };
+"save_plan_version": { Args: {"p_input": Json;"p_publish": boolean;"p_correlation": string}; Returns: Json };
 "save_programme_version": { Args: {"p_business": string;"p_input": Json;"p_correlation": string}; Returns: Json };
 "save_promotion": { Args: {"p_business": string;"p_input": Json;"p_correlation": string}; Returns: Json };
 "save_referral_rules": { Args: {"p_business": string;"p_input": Json;"p_correlation": string}; Returns: Json };
 "save_reward_draft": { Args: {"p_business": string;"p_input": Json;"p_correlation": string}; Returns: Json };
+"save_whatsapp_template": { Args: {"p_business": string;"p_input": Json;"p_correlation": string}; Returns: Json };
 "schedule_campaign": { Args: {"p_business": string;"p_campaign": string;"p_row_version": number;"p_scheduled_at": string;"p_key": string;"p_correlation": string}; Returns: Json };
 "set_business_participation": { Args: {"p_business_id": string;"p_status": string;"p_row_version": number;"p_correlation_id": string}; Returns: Json };
 "set_campaign_status": { Args: {"p_business": string;"p_campaign": string;"p_action": string;"p_row_version": number;"p_correlation": string}; Returns: Json };
@@ -3011,14 +3694,28 @@ Relationships: [
 "set_membership_handle": { Args: {"p_member": string;"p_hash": string;"p_ciphertext": string;"p_key_id": string;"p_rotate": boolean;"p_correlation_id": string}; Returns: Json };
 "set_offer_status": { Args: {"p_business": string;"p_offer": string;"p_status": string;"p_row_version": number;"p_correlation": string}; Returns: Json };
 "set_programme_status": { Args: {"p_business": string;"p_status": string;"p_row_version": number;"p_correlation": string}; Returns: Json };
+"set_programme_status_for": { Args: {"p_business": string;"p_programme": string;"p_status": string;"p_row_version": number;"p_correlation": string}; Returns: Json };
 "set_promotion_status": { Args: {"p_business": string;"p_promotion": string;"p_status": string;"p_row_version": number;"p_correlation": string}; Returns: Json };
 "staff_activity": { Args: {"p_business": string;"p_branch": string;"p_type": string;"p_start": string;"p_end": string;"p_size": number;"p_page": number}; Returns: Json };
 "staff_activity_detail": { Args: {"p_business": string;"p_type": string;"p_id": string}; Returns: Json };
 "staff_context": { Args: {"p_business": string}; Returns: Json };
+"staff_programmes": { Args: {"p_business": string}; Returns: Json };
+"start_support_access": { Args: {"p_business": string;"p_reason": string;"p_scope": string;"p_minutes": number;"p_correlation": string}; Returns: Json };
 "submit_media": { Args: {"p_asset_id": string;"p_correlation_id": string}; Returns: Json };
+"submit_payment_evidence": { Args: {"p_business": string;"p_invoice": string;"p_input": Json;"p_key": string;"p_correlation": string}; Returns: Json };
+"support_read": { Args: {"p_grant": string;"p_correlation": string}; Returns: Json };
+"update_platform_setting": { Args: {"p_key": string;"p_value": Json;"p_reason": string;"p_correlation": string}; Returns: Json };
 "update_profile": { Args: {"p_input": Json;"p_correlation_id": string}; Returns: Json };
+"whatsapp_configuration": { Args: {"p_business": string}; Returns: Json };
+"whatsapp_member_contact": { Args: {"p_business": string;"p_membership": string}; Returns: Json };
+"whatsapp_members": { Args: {"p_business": string;"p_query"?: string;"p_offset"?: number}; Returns: Json };
+"whatsapp_task_detail": { Args: {"p_business": string;"p_task": string}; Returns: Json };
+"whatsapp_tasks": { Args: {"p_business": string;"p_filters"?: Json}; Returns: Json };
+"worker_account_artifact": { Args: {"p_request": string;"p_token": string;"p_part": number;"p_path": string;"p_bytes": number;"p_ciphertext": string;"p_key_id": string}; Returns: string };
+"worker_account_export_page": { Args: {"p_request": string;"p_token": string;"p_section": string;"p_cursor"?: string}; Returns: Json };
 "worker_auth_email_job": { Args: {"p_outbox_id": string}; Returns: Json };
 "worker_automation_attempt_ready": { Args: {"p_attempt": string}; Returns: Json };
+"worker_billing_cycle": { Args: Record<string, never>; Returns: Json };
 "worker_campaign_attempt_ready": { Args: {"p_attempt": string}; Returns: Json };
 "worker_campaign_test_ready": { Args: {"p_request": string}; Returns: boolean };
 "worker_claim_automation_delivery": { Args: Record<string, never>; Returns: Json };
@@ -3029,13 +3726,18 @@ Relationships: [
 "worker_expire_pending_campaign_attempts": { Args: Record<string, never>; Returns: number };
 "worker_expire_push_challenges": { Args: Record<string, never>; Returns: number };
 "worker_expired_media": { Args: Record<string, never>; Returns: Json };
+"worker_expired_report_exports": { Args: Record<string, never>; Returns: Json };
+"worker_fail_report_export": { Args: {"p_outbox": string}; Returns: undefined };
 "worker_finish_auth_email": { Args: {"p_outbox_id": string;"p_provider_id": string}; Returns: undefined };
 "worker_finish_automation_attempt": { Args: {"p_attempt": string;"p_state": string;"p_provider_id": string;"p_error_code": string}; Returns: undefined };
 "worker_finish_campaign_attempt": { Args: {"p_attempt": string;"p_state": string;"p_provider_id": string;"p_error_code": string}; Returns: undefined };
 "worker_finish_campaign_test": { Args: {"p_request": string;"p_state": string;"p_message": string;"p_error": string}; Returns: boolean };
 "worker_finish_campaigns": { Args: Record<string, never>; Returns: number };
 "worker_finish_media": { Args: {"p_outbox_id": string;"p_accepted": boolean;"p_bytes": number;"p_width": number;"p_height": number}; Returns: undefined };
+"worker_finish_privacy": { Args: {"p_request": string;"p_token": string;"p_error"?: string}; Returns: boolean };
 "worker_finish_push_challenge": { Args: {"p_challenge_id": string;"p_state": string}; Returns: undefined };
+"worker_finish_report_export": { Args: {"p_export": string;"p_token": string;"p_bytes": number;"p_ciphertext": string;"p_key_id": string;"p_error"?: string}; Returns: boolean };
+"worker_health_status": { Args: Record<string, never>; Returns: Json };
 "worker_heartbeat": { Args: Record<string, never>; Returns: undefined };
 "worker_mark_dispatched": { Args: {"p_id": string}; Returns: undefined };
 "worker_mark_media_purged": { Args: {"p_asset_id": string}; Returns: undefined };
@@ -3043,11 +3745,23 @@ Relationships: [
 "worker_observe_loyalty": { Args: {"p_outbox": string}; Returns: boolean };
 "worker_observe_profile": { Args: {"p_outbox_id": string}; Returns: boolean };
 "worker_pending_outbox": { Args: Record<string, never>; Returns: Json[] };
+"worker_privacy_database": { Args: {"p_request": string;"p_token": string}; Returns: Json };
+"worker_privacy_job": { Args: {"p_outbox": string}; Returns: Json };
 "worker_purge_auth_email": { Args: Record<string, never>; Returns: undefined };
+"worker_purge_manual_messages": { Args: Record<string, never>; Returns: number };
 "worker_purge_rate_limits": { Args: Record<string, never>; Returns: number };
 "worker_purge_referral_grants": { Args: Record<string, never>; Returns: number };
 "worker_purge_referral_visits": { Args: Record<string, never>; Returns: number };
+"worker_purge_report_export": { Args: {"p_export": string;"p_path": string}; Returns: undefined };
 "worker_reconcile_balances": { Args: Record<string, never>; Returns: Json };
+"worker_report_export": { Args: {"p_outbox": string}; Returns: Json };
+"worker_reserve_account_upload": { Args: {"p_request": string;"p_token": string;"p_path": string}; Returns: undefined };
+"worker_retention": { Args: Record<string, never>; Returns: Json };
 "worker_scan_automations": { Args: Record<string, never>; Returns: Json };
 "worker_scan_campaigns": { Args: Record<string, never>; Returns: Json };
+"worker_vercel_activate": { Args: {"p_generation": string;"p_deployment": string;"p_run": string}; Returns: undefined };
+"worker_vercel_advance": { Args: {"p_generation": string;"p_epoch": number;"p_previous": string;"p_next": string}; Returns: boolean };
+"worker_vercel_current": { Args: {"p_generation": string;"p_deployment": string;"p_epoch": number;"p_run": string}; Returns: boolean };
+"worker_vercel_disable": { Args: Record<string, never>; Returns: undefined };
+"worker_vercel_status": { Args: Record<string, never>; Returns: Json };
 }; Enums: { [_ in never]: never }; CompositeTypes: { [_ in never]: never }; } };

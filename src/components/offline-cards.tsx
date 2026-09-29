@@ -1,10 +1,23 @@
 'use client';
 import { useEffect,useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from './ui/button';
 import { clearOfflineCards,offlineSettings,saveOfflineCards,setOfflineEnabled,type OfflineCard } from '@/lib/offline/cards';
 export function CardsSnapshot({userId,cards}:{userId:string;cards:OfflineCard[]}){
  useEffect(()=>{let active=true;const timer=setTimeout(()=>{if(active)void saveOfflineCards(userId,cards).catch(()=>{});},100);
   return()=>{active=false;clearTimeout(timer);};},[userId,cards]);
+ return null;
+}
+export function CardsPageRefresh(){
+ const router=useRouter();
+ useEffect(()=>{
+  const refresh=()=>{if(!document.hidden&&navigator.onLine)router.refresh();};
+  const timer=window.setInterval(refresh,15000);
+  window.addEventListener('focus',refresh);window.addEventListener('online',refresh);
+  document.addEventListener('visibilitychange',refresh);
+  return()=>{window.clearInterval(timer);window.removeEventListener('focus',refresh);window.removeEventListener('online',refresh);
+   document.removeEventListener('visibilitychange',refresh);};
+ },[router]);
  return null;
 }
 export function OfflineCardSettings({userId}:{userId:string}){

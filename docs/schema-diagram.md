@@ -280,11 +280,106 @@ erDiagram
     uuid customer_user_id
     timestamptz created_at
   }
+  export_artifacts {
+    uuid id
+    uuid export_request_id
+    int4 part_number
+    text storage_path
+    int8 bytes
+    text mime_type
+    timestamptz expires_at
+    timestamptz created_at
+  }
+  export_requests {
+    uuid id
+    uuid business_id
+    uuid requested_by
+    text kind
+    jsonb filters
+    jsonb columns
+    text status
+    timestamptz expires_at
+    int4 row_count
+    text error_code
+    timestamptz created_at
+    timestamptz updated_at
+    int4 row_version
+    uuid auth_session_id
+    text key
+    text request_hash
+    timestamptz processing_started_at
+    uuid processing_token
+    uuid privacy_request_id
+  }
+  followup_batches {
+    uuid id
+    uuid business_id
+    text name
+    uuid template_id
+    int4 template_version
+    text template_body
+    uuid offer_id
+    text audience
+    int4 inactive_days
+    uuid target_reward_version_id
+    uuid created_by
+    timestamptz created_at
+    uuid idempotency_key
+    text request_hash
+    jsonb preview_snapshot
+  }
+  followup_events {
+    uuid id
+    uuid business_id
+    uuid task_id
+    text action
+    uuid actor_user_id
+    timestamptz occurred_at
+    text note
+  }
+  followup_tasks {
+    uuid id
+    uuid business_id
+    uuid batch_id
+    uuid membership_id
+    uuid assigned_business_user_id
+    text state
+    text rendered_body
+    timestamptz opened_at
+    timestamptz marked_sent_at
+    uuid marked_sent_by
+    text skip_reason
+    timestamptz last_contact_checked_at
+    int4 contact_version_at_creation
+    uuid lease_owner_business_user_id
+    timestamptz lease_expires_at
+    timestamptz created_at
+    timestamptz updated_at
+    int4 row_version
+  }
   invitation_branches {
     uuid business_id
     uuid invitation_id
     uuid branch_id
     timestamptz created_at
+  }
+  invoices {
+    uuid id
+    uuid business_id
+    uuid subscription_id
+    uuid plan_version_id
+    text reference
+    int8 amount_paisa
+    text currency
+    timestamptz period_start
+    timestamptz period_end
+    timestamptz due_at
+    text status
+    timestamptz issued_at
+    timestamptz paid_at
+    timestamptz created_at
+    timestamptz updated_at
+    int4 row_version
   }
   job_effect_receipts {
     uuid id
@@ -321,6 +416,7 @@ erDiagram
     timestamptz created_at
     timestamptz updated_at
     int4 row_version
+    bool is_primary
   }
   media_assets {
     uuid id
@@ -375,6 +471,7 @@ erDiagram
     timestamptz created_at
     timestamptz updated_at
     int4 row_version
+    uuid programme_id
   }
   offer_branches {
     uuid business_id
@@ -460,6 +557,41 @@ erDiagram
     timestamptz updated_at
     int4 row_version
   }
+  payment_events {
+    uuid id
+    uuid business_id
+    uuid invoice_id
+    uuid submission_id
+    int8 verified_amount_paisa
+    text method
+    text provider_or_bank
+    text external_reference
+    timestamptz verified_at
+    uuid verified_by
+    text event
+    uuid corrects_event_id
+    text reason
+    uuid idempotency_key
+    text request_hash
+    timestamptz created_at
+  }
+  payment_submissions {
+    uuid id
+    uuid business_id
+    uuid invoice_id
+    int8 claimed_amount_paisa
+    text method
+    text claimed_reference
+    uuid proof_asset_id
+    uuid submitted_by
+    text status
+    text review_note
+    uuid idempotency_key
+    text request_hash
+    timestamptz created_at
+    timestamptz updated_at
+    int4 row_version
+  }
   plan_versions {
     uuid id
     uuid plan_id
@@ -493,6 +625,12 @@ erDiagram
     timestamptz updated_at
     int4 row_version
   }
+  platform_settings {
+    text key
+    jsonb value
+    timestamptz updated_at
+    uuid updated_by
+  }
   policy_documents {
     uuid id
     uuid business_id
@@ -501,6 +639,30 @@ erDiagram
     text body
     timestamptz published_at
     timestamptz created_at
+  }
+  privacy_requests {
+    uuid id
+    uuid customer_user_id
+    uuid membership_id
+    uuid business_id
+    text kind
+    text status
+    timestamptz requested_at
+    timestamptz completed_at
+    text result_storage_path
+    timestamptz result_expires_at
+    text error_code
+    jsonb retained_categories
+    uuid export_request_id
+    uuid idempotency_key
+    text request_hash
+    uuid processing_token
+    timestamptz processing_started_at
+    timestamptz database_completed_at
+    uuid auth_identity_id
+    timestamptz created_at
+    timestamptz updated_at
+    int4 row_version
   }
   profiles {
     uuid user_id
@@ -824,12 +986,39 @@ erDiagram
     timestamptz created_at
     timestamptz updated_at
     int4 row_version
+    timestamptz trial_ends_at
+    bool operator_suspended
+    timestamptz cancellation_effective_at
+  }
+  support_access_grants {
+    uuid id
+    uuid business_id
+    uuid admin_user_id
+    text reason
+    timestamptz starts_at
+    timestamptz expires_at
+    timestamptz revoked_at
+    text scope
+    timestamptz created_at
+  }
+  whatsapp_templates {
+    uuid id
+    uuid business_id
+    text name
+    text body
+    int4 version
+    bool active
+    uuid created_by
+    timestamptz created_at
+    timestamptz updated_at
+    int4 row_version
   }
   businesses ||--o{ adjustments : "adjustments_business_id_fkey"
   memberships ||--o{ adjustments : "adjustments_business_id_membership_id_fkey"
   profiles ||--o{ adjustments : "adjustments_actor_user_id_fkey"
   businesses ||--o{ audit_events : "audit_events_business_id_fkey"
   profiles ||--o{ audit_events : "audit_events_actor_user_id_fkey"
+  support_access_grants ||--o{ audit_events : "audit_events_support_access_grant_id_fkey"
   businesses ||--o{ automation_rules : "automation_rules_business_id_fkey"
   offers ||--o{ automation_rules : "automation_rules_business_id_offer_id_fkey"
   reward_versions ||--o{ automation_rules : "automation_rules_business_id_reward_version_id_fkey"
@@ -885,9 +1074,28 @@ erDiagram
   policy_documents ||--o{ enrollment_acceptances : "enrollment_acceptances_privacy_document_id_fkey"
   profiles ||--o{ enrollment_acceptances : "enrollment_acceptances_customer_user_id_fkey"
   programme_versions ||--o{ enrollment_acceptances : "enrollment_acceptances_business_id_programme_version_id_fkey"
+  export_requests ||--o{ export_artifacts : "export_artifacts_export_request_id_fkey"
+  businesses ||--o{ export_requests : "export_requests_business_id_fkey"
+  privacy_requests ||--o{ export_requests : "export_requests_privacy_request_id_fkey"
+  profiles ||--o{ export_requests : "export_requests_requested_by_fkey"
+  businesses ||--o{ followup_batches : "followup_batches_business_id_fkey"
+  offers ||--o{ followup_batches : "followup_batches_business_id_offer_id_fkey"
+  profiles ||--o{ followup_batches : "followup_batches_created_by_fkey"
+  reward_versions ||--o{ followup_batches : "followup_batches_business_id_target_reward_version_id_fkey"
+  whatsapp_templates ||--o{ followup_batches : "followup_batches_business_id_template_id_fkey"
+  followup_tasks ||--o{ followup_events : "followup_events_business_id_task_id_fkey"
+  profiles ||--o{ followup_events : "followup_events_actor_user_id_fkey"
+  business_users ||--o{ followup_tasks : "followup_tasks_business_id_assigned_business_user_id_fkey"
+  business_users ||--o{ followup_tasks : "followup_tasks_business_id_lease_owner_business_user_id_fkey"
+  followup_batches ||--o{ followup_tasks : "followup_tasks_business_id_batch_id_fkey"
+  memberships ||--o{ followup_tasks : "followup_tasks_business_id_membership_id_fkey"
+  profiles ||--o{ followup_tasks : "followup_tasks_marked_sent_by_fkey"
   branches ||--o{ invitation_branches : "invitation_branches_business_id_branch_id_fkey"
   businesses ||--o{ invitation_branches : "invitation_branches_business_id_fkey"
   staff_invitations ||--o{ invitation_branches : "invitation_branches_business_id_invitation_id_fkey"
+  businesses ||--o{ invoices : "invoices_business_id_fkey"
+  plan_versions ||--o{ invoices : "invoices_plan_version_id_fkey"
+  subscriptions ||--o{ invoices : "invoices_business_id_subscription_id_fkey"
   businesses ||--o{ job_effect_receipts : "job_effect_receipts_business_id_fkey"
   adjustments ||--o{ ledger_entries : "ledger_entries_business_id_adjustment_id_fkey"
   businesses ||--o{ ledger_entries : "ledger_entries_business_id_fkey"
@@ -909,6 +1117,7 @@ erDiagram
   memberships ||--o{ membership_handles : "membership_handles_business_id_membership_id_fkey"
   branches ||--o{ memberships : "memberships_business_id_joined_branch_id_fkey"
   businesses ||--o{ memberships : "memberships_business_id_fkey"
+  loyalty_programmes ||--o{ memberships : "membership_programme_business_fkey"
   profiles ||--o{ memberships : "memberships_customer_user_id_fkey"
   branches ||--o{ offer_branches : "offer_branches_business_id_branch_id_fkey"
   offers ||--o{ offer_branches : "offer_branches_business_id_offer_id_fkey"
@@ -931,9 +1140,20 @@ erDiagram
   offers ||--o{ offers : "offers_business_id_source_template_id_fkey"
   profiles ||--o{ offers : "offers_created_by_fkey"
   businesses ||--o{ outbox_events : "outbox_events_business_id_fkey"
+  invoices ||--o{ payment_events : "payment_events_business_id_invoice_id_fkey"
+  payment_events ||--o{ payment_events : "payment_events_business_id_corrects_event_id_fkey"
+  payment_submissions ||--o{ payment_events : "payment_events_business_id_submission_id_fkey"
+  profiles ||--o{ payment_events : "payment_events_verified_by_fkey"
+  invoices ||--o{ payment_submissions : "payment_submissions_business_id_invoice_id_fkey"
+  media_assets ||--o{ payment_submissions : "payment_submissions_business_id_proof_asset_id_fkey"
+  profiles ||--o{ payment_submissions : "payment_submissions_submitted_by_fkey"
   plans ||--o{ plan_versions : "plan_versions_plan_id_fkey"
   profiles ||--o{ platform_admins : "platform_admins_user_id_fkey"
+  profiles ||--o{ platform_settings : "platform_settings_updated_by_fkey"
   businesses ||--o{ policy_documents : "policy_documents_business_id_fkey"
+  export_requests ||--o{ privacy_requests : "privacy_requests_export_request_id_fkey"
+  memberships ||--o{ privacy_requests : "privacy_requests_business_id_membership_id_fkey"
+  profiles ||--o{ privacy_requests : "privacy_requests_customer_user_id_fkey"
   users ||--o{ profiles : "profiles_auth_user_id_fkey"
   businesses ||--o{ programme_versions : "programme_versions_business_id_fkey"
   loyalty_programmes ||--o{ programme_versions : "programme_versions_business_id_programme_id_fkey"
@@ -1008,4 +1228,8 @@ erDiagram
   profiles ||--o{ staff_invitations : "staff_invitations_invited_by_fkey"
   businesses ||--o{ subscriptions : "subscriptions_business_id_fkey"
   plan_versions ||--o{ subscriptions : "subscriptions_plan_version_id_fkey"
+  businesses ||--o{ support_access_grants : "support_access_grants_business_id_fkey"
+  profiles ||--o{ support_access_grants : "support_access_grants_admin_user_id_fkey"
+  businesses ||--o{ whatsapp_templates : "whatsapp_templates_business_id_fkey"
+  profiles ||--o{ whatsapp_templates : "whatsapp_templates_created_by_fkey"
 ```

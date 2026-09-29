@@ -2,27 +2,29 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { IScannerControls } from '@zxing/browser';
+import { Button } from '@/components/ui/button';
 import { idempotencyKey, LoyaltyRequestError, loyaltyRequest, useOnline } from './client';
 
 type Branch = { id: string; name: string };
+type Programme = {id:string;name:string;type:'stamps'|'points';status:string};
 type Lookup = { contextId: string; checkoutContext: string; kind: 'earning' | 'redemption' | 'offer'; memberName: string; businessId: string; branchId: string;
-  branchName?:string;balance: string; rewardTitle: string | null; rewardUnitCost: string | null;
+  branchName?:string;programmeId?:string;programmeName?:string;programmeType?:string;balance: string; rewardTitle: string | null; rewardUnitCost: string | null;
   offerTitle?: string | null; offerKind?: 'treat' | 'discount'; offerMinimumSpendPaisa?: string | null; expiresAt: string };
 const storageKey = (businessId: string) => `loyalty-checkout:${businessId}`;
 
-export function StaffScan({ businessId, businessName, branches }: { businessId: string; businessName: string; branches: Branch[] }) {
+export function StaffScan({ businessId, businessName, branches,programmes }: { businessId: string; businessName: string; branches: Branch[];programmes:Programme[] }) {
   const online=useOnline();
   const router = useRouter(), video = useRef<HTMLVideoElement>(null), controls = useRef<IScannerControls | null>(null), active = useRef(false);
-  const [branchId, setBranchId] = useState(branches[0]?.id ?? ''), [code, setCode] = useState(''), [message, setMessage] = useState(''), [busy, setBusy] = useState(false);
+  const [branchId, setBranchId] = useState(branches[0]?.id ?? ''), [programmeId,setProgrammeId]=useState(programmes[0]?.id??''), [code, setCode] = useState(''), [message, setMessage] = useState(''), [busy, setBusy] = useState(false);
   useEffect(() => { const chosen = sessionStorage.getItem(`loyalty-branch:${businessId}`); if (chosen && branches.some(b => b.id===chosen)) setBranchId(chosen);
     return () => { active.current=false; controls.current?.stop(); }; }, [businessId,branches]);
   function stop() { active.current=false; controls.current?.stop(); controls.current=null; }
   async function resolve(rawValue: string, kind: 'earningHandle'|'redemptionIntent'|'offerIntent'|'typedCode') {
     if (!navigator.onLine) { setMessage('Offline. Reconnect before checkout.'); return; }
-    setBusy(true); try { const result=await loyaltyRequest<Lookup>('resolve',{ businessId, branchId, kind, rawValue });
+    setBusy(true); try { const result=await loyaltyRequest<Lookup>('resolve',{ businessId, branchId,programmeId, kind, rawValue });
       stop(); sessionStorage.setItem(storageKey(businessId),JSON.stringify({...result,branchName:branches.find(branch=>branch.id===result.branchId)?.name}));
       router.push(result.kind==='earning' ? `/staff/${businessId}/checkout` : `/staff/${businessId}/redeem`);
-    } catch(error) { setMessage(error instanceof Error ? error.message : 'Customer lookup failed.'); active.current=true; }
+    } catch(error) { setMessage(error instanceof Error ? `${error.message} Check that the selected programme matches the customer card.` : 'Customer lookup failed.'); active.current=true; }
     finally { setBusy(false); }
   }
   async function scan() {
@@ -44,10 +46,13 @@ export function StaffScan({ businessId, businessName, branches }: { businessId: 
   }
   return <main id="main" className="container"><h1>{businessName} checkout</h1><label>Branch <select value={branchId} onChange={event => { stop();setBranchId(event.target.value);
     sessionStorage.setItem(`loyalty-branch:${businessId}`,event.target.value);sessionStorage.removeItem(storageKey(businessId)); }}>{branches.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}</select></label>
+    <label>Programme for this checkout <select value={programmeId} onChange={event=>{stop();setProgrammeId(event.target.value);sessionStorage.removeItem(storageKey(businessId));}}>
+      {programmes.map(programme=><option key={programme.id} value={programme.id}>{programme.name} · {programme.type}{programme.status==='paused'?' (paused)':''}</option>)}</select></label>
+    <p>Ask the customer to show the card for the selected programme. A different card will be rejected.</p>
     <section className="screen-panel"><h2>Scan customer QR</h2><video ref={video} muted playsInline style={{ width:'100%',maxWidth:360 }} aria-label="Camera preview"/>
-      <div className="actions"><button type="button" disabled={busy || !online || !branchId} onClick={() => void scan()}>Scan customer QR</button><button type="button" onClick={stop}>Stop camera</button></div></section>
+      <div className="actions"><button type="button" disabled={busy || !online || !branchId || !programmeId} onClick={() => void scan()}>Scan customer QR</button><button type="button" onClick={stop}>Stop camera</button></div></section>
     <section className="screen-panel"><h2>Enter customer code</h2><label>8-character code <input id="lookupCode" maxLength={8} value={code} onChange={e=>setCode(e.target.value.toUpperCase())}/></label>
-      <button type="button" disabled={busy || !online || code.length!==8 || !branchId} onClick={() => void resolve(code,'typedCode')}>Look up customer</button></section>
+      <button type="button" disabled={busy || !online || code.length!==8 || !branchId || !programmeId} onClick={() => void resolve(code,'typedCode')}>Look up customer</button></section>
     <p role="status">{!online?'Offline. Reconnect before checkout.':message}</p><a href={`/staff/${businessId}/activity`}>Recent activity</a></main>;
 }
 
@@ -62,29 +67,38 @@ function useCheckout(businessId: string, kind: Lookup['kind'] | 'purchase' | 'be
 }
 type PurchaseEffect = { baseUnits: string; promotionBonusUnits: string; referralBonusUnits: string; inviterBonusUnits: string;
   promotionReason: string; referralReason: string; balance: string; qualifiesForLoyalty: boolean;
-  capReduced: boolean|null; expectedEffectHash: string; programmeVersionId: string;
+  capReduced: boolean|null; expectedEffectHash: string; programmeVersionId: string; eligibleSpendPaisa?:string; minimumSpendPaisa?:string|null;
   offerClaimId?: string; offerTitle?: string; offerKind?: 'treat' | 'discount'; appliedDiscountPaisa?: string; offerBenefitDescription?: string };
 export function PurchaseCheckout({ businessId }: { businessId: string }) {
   const online=useOnline();
   const lookup=useCheckout(businessId,'purchase');
+  const previewPanel=useRef<HTMLElement>(null),resultPanel=useRef<HTMLElement>(null);
   const [bill,setBill]=useState(''),[eligible,setEligible]=useState(''),[beforeDiscount,setBeforeDiscount]=useState(''),
     [receipt,setReceipt]=useState(''),[confirmed,setConfirmed]=useState(false);
   const [effect,setEffect]=useState<PurchaseEffect|null>(null),[message,setMessage]=useState(''),[busy,setBusy]=useState(false),[key,setKey]=useState('');
   const [result,setResult]=useState<{ purchaseId:string;receiptReference:string|null;balanceAfterAtCommit:string;baseUnits:string;
     promotionBonusUnits:string;referralBonusUnits:string;inviterBonusUnits:string;offerClaimId?:string;appliedDiscountPaisa?:string }|null>(null);
+  useEffect(()=>{if(effect)previewPanel.current?.focus();},[effect]);
+  useEffect(()=>{if(result)resultPanel.current?.focus();},[result]);
   const amount=(value:string)=>{ const [whole='',decimal='']=value.trim().split('.'); if (!/^\d+$/u.test(whole)||!/^\d{0,2}$/u.test(decimal)) throw new Error('Enter rupees with at most two decimal places.');
     return (BigInt(whole)*100n+BigInt((decimal+'00').slice(0,2))).toString(); };
   const fields=()=>({ recordedBillPaisa:amount(bill),eligibleSpendPaisa:amount(eligible),qualifyingPurchaseConfirmed:confirmed,receiptReference:receipt,
     ...(lookup?.offerKind==='discount' ? {offerEligibleBeforeDiscountPaisa:amount(beforeDiscount)} : {}) });
   async function preview() {
-    if (!lookup) return; setBusy(true);setResult(null);
-    try { const next=await loyaltyRequest<PurchaseEffect>('preview-purchase',{ checkoutContext:lookup.checkoutContext,...fields() });setEffect(next);setKey(idempotencyKey());setMessage('Review the actual paid bill and calculated award before confirming.'); }
+    if (!lookup) return;
+    if (!bill.trim() || !eligible.trim()) { setEffect(null);setMessage('Enter the paid bill and eligible spend before reviewing the stamp award.');return; }
+    setBusy(true);setResult(null);setMessage('Checking the purchase…');
+    try { const next=await loyaltyRequest<PurchaseEffect>('preview-purchase',{ checkoutContext:lookup.checkoutContext,...fields() });setEffect(next);setKey(idempotencyKey());
+      setMessage(next.qualifiesForLoyalty?'Review the actual paid bill and calculated award before confirming.':`This purchase does not qualify for ${lookup.programmeType??'loyalty units'}. Review the reason below before recording it.`); }
     catch(error){setEffect(null);setMessage(error instanceof Error ? error.message : 'Preview failed.');}finally{setBusy(false);}
   }
   async function commit() {
     if (!lookup || !effect || !key) return;
+    const customerAward=BigInt(effect.baseUnits)+BigInt(effect.promotionBonusUnits)+BigInt(effect.referralBonusUnits);
     if (!confirm(`${effect.offerKind==='treat'?'Confirm the offered item was given. ':effect.offerKind==='discount'
-      ?`Confirm the Rs ${(Number(effect.appliedDiscountPaisa??0)/100).toFixed(2)} discount was applied to the paid bill. `:''}Record this checkout and award ${effect.baseUnits} base + ${effect.promotionBonusUnits} slot + ${effect.referralBonusUnits} friend units?${BigInt(effect.inviterBonusUnits)>0n?` The inviter also earns ${effect.inviterBonusUnits}.`:''}`)) return;
+      ?`Confirm the Rs ${(Number(effect.appliedDiscountPaisa??0)/100).toFixed(2)} discount was applied to the paid bill. `:''}${customerAward===0n
+      ?`Record this purchase with no ${lookup.programmeType??'loyalty'} awarded? The customer balance will remain ${effect.balance}.`
+      :`Record this checkout and award ${effect.baseUnits} base + ${effect.promotionBonusUnits} slot + ${effect.referralBonusUnits} friend units?${BigInt(effect.inviterBonusUnits)>0n?` The inviter also earns ${effect.inviterBonusUnits}.`:''}`}`)) return;
     setBusy(true);try{const next=await loyaltyRequest<typeof result>('record-purchase',{checkoutContext:lookup.checkoutContext,...fields(),expectedEffectHash:effect.expectedEffectHash,idempotencyKey:key});
       setResult(next);sessionStorage.removeItem(storageKey(businessId));setMessage('Purchase committed.');}
     catch(error){
@@ -97,30 +111,41 @@ export function PurchaseCheckout({ businessId }: { businessId: string }) {
     finally{setBusy(false);}
   }
   if (!lookup) return <main id="main" className="container"><h1>Purchase checkout</h1><p>Scan a customer QR or enter a code first.</p><a href={`/staff/${businessId}`}>Scan customer</a></main>;
-  return <main id="main" className="container"><h1>{lookup.kind==='offer'?'Offer checkout':'Purchase checkout'}</h1><p>{lookup.memberName} · Balance {lookup.balance}</p>
+  const customerAward=effect?BigInt(effect.baseUnits)+BigInt(effect.promotionBonusUnits)+BigInt(effect.referralBonusUnits):0n;
+  const belowMinimum=effect?.minimumSpendPaisa!=null&&BigInt(effect.eligibleSpendPaisa??amount(eligible))<BigInt(effect.minimumSpendPaisa);
+  return <main id="main" className="container"><h1>{lookup.kind==='offer'?'Offer checkout':'Purchase checkout'}</h1><p>{lookup.memberName} · {lookup.programmeName??'Loyalty programme'} · Balance {lookup.balance} {lookup.programmeType??''}</p>
     {lookup.kind==='offer'&&<p>Claimed offer: {lookup.offerTitle}. {lookup.offerKind==='discount'?'Apply the discount to the paid bill.':'Give the offered item at checkout.'}</p>}
     <p>Branch {lookup.branchName??lookup.branchId} · <a href={`/staff/${businessId}`}>Change branch and scan again</a></p>
-    {!result && <section className="screen-panel"><label>Bill total paid (Rs) <input inputMode="decimal" value={bill} onChange={e=>{setBill(e.target.value);setEffect(null);}}/></label>
-      <label>Eligible spend (Rs) <input inputMode="decimal" value={eligible} onChange={e=>{setEligible(e.target.value);setEffect(null);}}/></label>
+    {!result && <section className="screen-panel stack"><h2>Record this purchase</h2><p>Enter the actual paid bill and eligible spend. Checking the box confirms the purchase; stamps are added after you review and confirm the award.</p>
+      <label>Bill total paid (Rs) <input inputMode="decimal" value={bill} onChange={e=>{setBill(e.target.value);setEffect(null);setMessage('');}}/></label>
+      <label>Eligible spend (Rs) <input inputMode="decimal" value={eligible} onChange={e=>{setEligible(e.target.value);setEffect(null);setMessage('');}}/></label>
       {lookup.offerKind==='discount'&&<label>Eligible spend before offer discount (Rs) <input inputMode="decimal" value={beforeDiscount}
         onChange={e=>{setBeforeDiscount(e.target.value);setEffect(null);}}/></label>}
-      <button type="button" onClick={()=>{if(confirm('Is the whole paid bill eligible under this cafe’s terms?')){setEligible(bill);setEffect(null);}}}>Use bill amount</button>
+      <Button type="button" variant="secondary" onClick={()=>{if(confirm('Is the whole paid bill eligible under this cafe’s terms?')){setEligible(bill);setEffect(null);setMessage('');}}}>Use bill amount</Button>
       <label>Receipt reference (optional) <input maxLength={80} value={receipt} onChange={e=>{setReceipt(e.target.value);setEffect(null);}}/></label>
-      <label><input type="checkbox" checked={confirmed} onChange={e=>{setConfirmed(e.target.checked);setEffect(null);}}/> Qualifying purchase confirmed</label>
-      <button type="button" disabled={busy||!online} onClick={() => void preview()}>Review purchase</button>
-      {effect && <section><h2>Server preview</h2><p>Base {effect.baseUnits} · Bonus {effect.promotionBonusUnits} · Current balance {effect.balance} · After award {(
+      <label><input type="checkbox" checked={confirmed} onChange={e=>{setConfirmed(e.target.checked);setEffect(null);setMessage(e.target.checked?'Next, review the purchase and confirm the award.':'');}}/> Qualifying purchase confirmed</label>
+      <div className="actions"><Button type="button" disabled={busy||!online} onClick={() => void preview()}>Review purchase</Button></div>
+      <p role="status">{!online?'Offline. Reconnect before awarding.':message}</p>
+      {effect && <section ref={previewPanel} tabIndex={-1}><h2>Server preview</h2><p>Base {effect.baseUnits} · Bonus {effect.promotionBonusUnits} · Current balance {effect.balance} · After award {(
         BigInt(effect.balance)+BigInt(effect.baseUnits)+BigInt(effect.promotionBonusUnits)+BigInt(effect.referralBonusUnits)).toString()}</p>
         {effect.offerClaimId&&<p>Offer: {effect.offerTitle}. {effect.offerKind==='discount'
           ?`Discount Rs ${(Number(effect.appliedDiscountPaisa??0)/100).toFixed(2)}. Confirm it appears on the paid bill.`
           :`Give the offered item: ${effect.offerBenefitDescription??effect.offerTitle}.`}</p>}
         <p>Double slot: {effect.promotionReason.replaceAll('_',' ')}. Referral: {effect.referralReason.replaceAll('_',' ')}.
           {BigInt(effect.inviterBonusUnits)>0n?` Inviter earns ${effect.inviterBonusUnits} units.`:''}</p>
-        {effect.capReduced && <p>Programme cap reduced earning.</p>}<p>{effect.qualifiesForLoyalty ? 'Qualifies for loyalty' : 'No units awarded'}</p>
-        <button type="button" disabled={busy||!online} onClick={() => void commit()}>Confirm and award</button></section>}</section>}
-    {result && <section className="screen-panel"><h2>Purchase committed</h2><p>Reference {result.receiptReference??result.purchaseId}</p>
+        {effect.capReduced && <p>Programme cap reduced earning.</p>}
+        {!effect.qualifiesForLoyalty&&<p role="alert">No {lookup.programmeType??'loyalty units'} will be added. {belowMinimum
+          ?`Eligible spend is below the Rs ${(Number(effect.minimumSpendPaisa)/100).toLocaleString('en-PK')} minimum for this programme.`
+          :'This purchase does not meet the published earning rules.'}</p>}
+        {effect.qualifiesForLoyalty&&<p>Qualifies for loyalty.</p>}
+        <Button type="button" disabled={busy||!online} onClick={() => void commit()}>{customerAward>0n?'Confirm and award':`Record without ${lookup.programmeType??'units'}`}</Button></section>}</section>}
+    {result && <section ref={resultPanel} tabIndex={-1} className="screen-panel"><h2>Purchase committed</h2><p>Reference {result.receiptReference??result.purchaseId}</p>
       {result.offerClaimId&&<p>Offer fulfilled. {lookup.offerKind==='discount'?`Discount Rs ${(Number(result.appliedDiscountPaisa??0)/100).toFixed(2)} applied.`:lookup.offerTitle}</p>}
-      <p>Awarded {result.baseUnits} base + {result.promotionBonusUnits} slot + {result.referralBonusUnits} friend units; balance {result.balanceAfterAtCommit}. {BigInt(result.inviterBonusUnits)>0n?`Inviter earned ${result.inviterBonusUnits}.`:''}</p>
-      <a href={`/staff/${businessId}`}>Scan next customer</a></section>}<p role="status">{!online?'Offline. Reconnect before awarding.':message}</p></main>;
+      <p>{BigInt(result.baseUnits)+BigInt(result.promotionBonusUnits)+BigInt(result.referralBonusUnits)===0n
+        ?`No ${lookup.programmeType??'units'} awarded. Customer balance remains ${result.balanceAfterAtCommit}.`
+        :`Awarded ${result.baseUnits} base + ${result.promotionBonusUnits} slot + ${result.referralBonusUnits} friend units; balance ${result.balanceAfterAtCommit}.`}
+        {BigInt(result.inviterBonusUnits)>0n?` Inviter earned ${result.inviterBonusUnits}.`:''}</p>
+      <a href={`/staff/${businessId}`}>Scan next customer</a></section>}</main>;
 }
 
 export function RedemptionCheckout({ businessId }: { businessId: string }) {
@@ -138,7 +163,7 @@ export function RedemptionCheckout({ businessId }: { businessId: string }) {
     finally{setBusy(false);}}
   if(!lookup)return <main id="main" className="container"><h1>Reward or offer fulfillment</h1><p>Scan a customer intent first.</p><a href={`/staff/${businessId}`}>Scan intent</a></main>;
   if(lookup.kind==='offer')return <OfferFulfillment businessId={businessId} lookup={lookup}/>;
-  return <main id="main" className="container"><h1>Reward redemption</h1><p>{lookup.memberName} · {lookup.rewardTitle} · {lookup.rewardUnitCost} units</p><p>Branch {lookup.branchName??lookup.branchId} · Intent expires {new Date(lookup.expiresAt).toLocaleTimeString('en-PK')}</p>
+  return <main id="main" className="container"><h1>Reward redemption</h1><p>{lookup.memberName} · {lookup.programmeName??'Loyalty programme'} · {lookup.rewardTitle} · {lookup.rewardUnitCost} units</p><p>Branch {lookup.branchName??lookup.branchId} · Intent expires {new Date(lookup.expiresAt).toLocaleTimeString('en-PK')}</p>
     {!result&&<section className="screen-panel"><button type="button" disabled={busy||!online} onClick={()=>void preview()}>Review reward</button>
       {effect&&<><p>Balance {effect.balance} → {effect.balanceAfter}</p><button type="button" disabled={busy||!online} onClick={()=>void commit()}>Confirm reward given</button></>}</section>}
     {result&&<section className="screen-panel"><h2>Reward fulfilled</h2><p>Reference {result.redemptionId}; balance {result.balanceAfterAtCommit}</p><a href={`/staff/${businessId}`}>Scan next customer</a></section>}

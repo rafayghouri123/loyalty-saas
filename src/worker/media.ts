@@ -41,14 +41,14 @@ export async function validateMedia(pool: pg.Pool, outboxId: string, storage: Me
   await pool.query('select public.worker_finish_media($1,true,$2,$3,$4)', [outboxId, output.data.length, output.info.width, output.info.height]);
 }
 
-export async function purgeMedia(pool: pg.Pool, storage: MediaStorage) {
+export async function purgeMedia(pool: pg.Pool, storage: MediaStorage,limit=100) {
   const result = await pool.query('select public.worker_expired_media() as items');
   const items = z.array(z.object({ assetId: z.uuid(), path: z.string() })).parse(result.rows[0]?.items);
-  for (const item of items) { await storage.removeOriginal(item.path); await pool.query('select public.worker_mark_media_purged($1)', [item.assetId]); }
+  for (const item of items.slice(0,limit)) { await storage.removeOriginal(item.path); await pool.query('select public.worker_mark_media_purged($1)', [item.assetId]); }
 }
 
 export function supabaseMediaStorage(url: string, key: string): MediaStorage {
-  const client = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+  const client = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false },global:{fetch:(input,init)=>fetch(input,{...init,signal:init?.signal?AbortSignal.any([init.signal,AbortSignal.timeout(20000)]):AbortSignal.timeout(20000)})} });
   return {
     async download(path) {
       const { data, error } = await client.storage.from('loyalty-quarantine').download(path);

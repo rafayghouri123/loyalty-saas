@@ -1,0 +1,8 @@
+{
+ "name":"loyalty-monitor","version":"0.1.0","private":true,"type":"module",
+ "engines":{"node":">=24.21.0 <25"},
+ "scripts":{"build":"node scripts/sync-shared.mjs && next build && node scripts/verify-build.mjs","start":"next start --hostname 127.0.0.1","test":"node --import tsx --test tests/control.test.ts"},
+ "dependencies":{"next":"16.3.5","pg":"8.23.0","react":"19.3.0","react-dom":"19.3.0","workflow":"4.8.9"},
+ "devDependencies":{"@types/node":"24.13.4","@types/pg":"8.23.1","@types/react":"19.3.0","@types/react-dom":"19.3.0","typescript":"6.0.3","tsx":"4.23.13"},
+ "overrides":{"@workflow/core":{"nanoid":"5.1.16"},"undici":"7.30.0"}
+}

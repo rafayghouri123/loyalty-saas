@@ -1,0 +1,28 @@
+import {z} from 'zod';
+const uuid=z.uuid(),key=z.uuid();
+const text=(min:number,max:number)=>z.string().trim().refine(v=>Array.from(v).length>=min&&Array.from(v).length<=max,`Enter ${min}–${max} characters.`);
+export const amount=z.string().regex(/^[1-9][0-9]{0,12}$/u).pipe(z.string().refine(v=>BigInt(v)<=9000000000000n,'Amount is too large.'));
+const reason=text(10,500),positive=z.number().int().min(1).max(2147483647);
+export const billingRead=z.strictObject({businessId:uuid,invoiceId:uuid.optional()});
+export const evidence=z.strictObject({businessId:uuid,invoiceId:uuid,idempotencyKey:key,input:z.strictObject({claimedAmountPaisa:amount,method:z.enum(['bank_transfer','merchant_wallet']),reference:text(1,200),proofAssetId:uuid.nullable().optional()})});
+export const reconciliation=z.strictObject({invoiceId:uuid,idempotencyKey:key,input:z.strictObject({submissionId:uuid.optional(),verifiedAmountPaisa:amount.optional(),method:z.enum(['bank_transfer','merchant_wallet']).optional(),provider:z.string().trim().toLowerCase().regex(/^[a-z0-9][a-z0-9_-]{1,79}$/u).optional(),reference:text(1,200).optional(),decision:z.enum(['confirm','reject']),reason:reason.optional(),reconciled:z.boolean().optional()})}).refine(v=>v.input.decision==='reject'?Boolean(v.input.submissionId&&v.input.reason):Boolean(v.input.verifiedAmountPaisa&&v.input.method&&v.input.provider&&v.input.reference&&v.input.reconciled),'Reconcile the actual bank record, or give a rejection reason.');
+export const correction=z.strictObject({paymentEventId:uuid,reason,idempotencyKey:key});
+export const cancellation=z.strictObject({businessId:uuid});
+export const plan=z.strictObject({publish:z.boolean(),input:z.strictObject({id:uuid.optional(),code:z.string().regex(/^[a-z0-9-]{2,50}$/u),name:text(2,80),active:z.boolean(),pricePaisa:amount,billingPeriod:z.enum(['monthly','annual']),branchLimit:positive,staffLimit:positive,memberLimit:positive.nullable(),monthlyCampaignLimit:positive.nullable(),trialDays:z.number().int().min(0).max(30)})});
+export const adminFilters=z.strictObject({businessId:uuid.optional(),invoiceId:uuid.optional(),status:text(1,80).optional(),planVersionId:uuid.optional(),actorId:uuid.optional(),action:text(1,100).optional(),supportGrantId:uuid.optional(),from:z.iso.datetime({offset:true}).optional(),until:z.iso.datetime({offset:true}).optional(),page:z.number().int().min(1).max(1000).default(1),pageSize:z.number().int().min(1).max(100).default(25),eventType:text(1,100).optional()});
+export const adminRead=z.strictObject({kind:z.enum(['overview','businesses','plans','billing','jobs','audit']),filters:adminFilters.default({page:1,pageSize:25})});
+export const tenantAction=z.strictObject({businessId:uuid,action:z.enum(['pause','resume','suspend','reinstate']),reason});
+export const planChange=z.strictObject({businessId:uuid,planVersionId:uuid,invoiceId:uuid,reason});
+export const supportStart=z.strictObject({businessId:uuid,reason,scope:z.enum(['configuration','transaction_support']),minutes:z.union([z.literal(15),z.literal(30),z.literal(60)])});
+export const supportGrant=z.strictObject({grantId:uuid});
+export const jobAction=z.strictObject({eventId:uuid,action:z.enum(['retry','cancel']),reason});
+export const setting=z.strictObject({key:z.enum(['grace_days','notification_retention_days','log_retention_days','referral_visit_retention_days','device_retention_days','temporary_retention_hours','billing_instructions','canonical_providers','financial_retention_policy','backup_coverage']),value:z.union([z.number().int().min(1).max(365),text(10,4000),z.array(z.string().regex(/^[a-z0-9][a-z0-9_-]{1,79}$/u)).min(1).max(100)]),reason});
+export const privacyRequest=z.strictObject({kind:z.enum(['export','delete_membership','delete_account']),membershipId:uuid.nullable().default(null),idempotencyKey:key}).refine(v=>(v.kind==='delete_membership')===Boolean(v.membershipId),'Choose your own membership.');
+export const privacyRetry=z.strictObject({requestId:uuid,reason});
+export const empty=z.strictObject({});
+export const privacyQueue=z.strictObject({page:z.number().int().min(1).max(4000).default(1)});
+
+export type Invoice={id:string;reference:string;amountPaisa:string;periodStart:string;periodEnd:string;dueAt:string;status:string;submissions:{id:string;status:string;reviewNote:string|null;createdAt:string;claimedAmountPaisa:string}[]};
+export type BillingView={businessId:string;subscription:{id:string;plan:string;planVersion:number;pricePaisa:string;billingPeriod:string;status:string;periodStart:string;periodEnd:string;graceEndsAt:string|null;cancelAtPeriodEnd:boolean;limits:{branches:number;staff:number;members:number|null;campaigns:number|null}};usage:{branches:number;staff:number;members:number;campaigns:number};instructions:string|null;invoices:Invoice[]};
+export type PrivacyView={retentionConfigured:boolean;financialPolicy:string|null;backupCoverage:string|null;requests:{id:string;kind:string;status:string;membershipId:string|null;requestedAt:string;completedAt:string|null;errorCode:string|null;retainedCategories:string[];exportRequestId:string|null;expiresAt:string|null;parts:{id:string;part:number;bytes:string;mimeType:string}[]}[]};
+export type AdminData={rows?:Record<string,unknown>[];total?:number;page?:number;pageSize?:number;dataAsOf?:string;counts?:Record<string,number|string|null>;checks?:{name:string;status:string;checkedAt:string;details:unknown}[];settings?:Record<string,unknown>;capabilities?:{billing:boolean;support:boolean}};

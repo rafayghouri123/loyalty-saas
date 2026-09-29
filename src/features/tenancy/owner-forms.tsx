@@ -8,6 +8,8 @@ import { mutate } from './mutate';
 import { HoursEditor, type Hours } from './hours-editor';
 import { formatPaisa } from '@/lib/formatting';
 import { LoyaltyCard } from '@/components/loyalty-card';
+import { ProgrammeFields, type ProgrammeFieldValues } from '@/features/loyalty/programme-fields';
+import { RewardFields, type RewardFieldValues } from '@/features/loyalty/reward-fields';
 
 export function Field({ label, ...props }: InputHTMLAttributes<HTMLInputElement> & { label: string }) {
   return <label className="field">{label}<input {...props}/></label>;
@@ -25,7 +27,7 @@ export function OnboardingForm({ plans }: { plans: Configuration['plans'] }) {
   useEffect(() => { if (loaded) { try { sessionStorage.setItem('loyalty-business-draft', JSON.stringify({ ...draft, hours })); } catch { /* Optional browser storage. */ } } }, [draft, hours, loaded]);
   if (!loaded) return <p>Loading your browser-session draft…</p>;
   const selected = plans.find(p => p.id === draft.planVersionId) ?? plans[0];
-  return <form key={step} className="stack" aria-busy={pending} onSubmit={async e => {
+  return <form key={step} className="stack" aria-busy={pending} onChange={e=>{const fields=Object.fromEntries(new FormData(e.currentTarget)) as Record<string,string>;setDraft(d=>({...d,...fields}));}} onSubmit={async e => {
     e.preventDefault(); setError(''); const f = Object.fromEntries(new FormData(e.currentTarget)) as Record<string, string>; const next = { ...draft, ...f };
     setDraft(next); try { sessionStorage.setItem('loyalty-business-draft', JSON.stringify({ ...next, hours })); } catch { /* Storage is optional. */ }
     if (step === 1) { setStep(2); return; }
@@ -65,17 +67,21 @@ export type Setup = { business: { id: string; display_name: string; slug: string
   staff: { id: string; name: string; email: string; role: string; status: string; rowVersion: number; branchIds: string[]; canManageCampaigns: boolean; canContactCustomers: boolean; canReverseTransactions: boolean; canExportReports: boolean }[];
   invitations: { id: string; email: string; role: string; status: string; expiresAt: string; rowVersion: number; branchIds: string[] }[] };
 
-export function ProgrammeForm({ setup }: { setup: Setup }) {
-  const [step, setStep] = useState(3), [mode, setMode] = useState(setup.programme?.type ?? 'stamps'), [pending, setPending] = useState(false), [error, setError] = useState('');
+const rewardDraftFieldNames: Record<keyof RewardFieldValues, string> = {
+  title: 'rewardTitle', cost: 'rewardCost', description: 'rewardDescription', terms: 'rewardTerms', estimate: 'estimatedCost',
+};
+
+export function ProgrammeForm({ setup, additional = false }: { setup: Setup; additional?: boolean }) {
+  const [step, setStep] = useState(3), [mode, setMode] = useState(additional ? 'stamps' : setup.programme?.type ?? 'stamps'), [pending, setPending] = useState(false), [error, setError] = useState('');
   const toRupees = (value: string | null | undefined) => value == null ? '' : `${BigInt(value) / 100n}.${(BigInt(value) % 100n).toString().padStart(2, '0')}`;
-  const [draft, setDraft] = useState<Record<string, FormDataEntryValue>>((): Record<string, FormDataEntryValue> => setup.programmeVersion ? {
+  const [draft, setDraft] = useState<Record<string, FormDataEntryValue>>((): Record<string, FormDataEntryValue> => !additional && setup.programmeVersion ? {
     name: setup.programme?.name ?? '', minimum: toRupees(setup.programmeVersion.minimum_spend_paisa), stamps: setup.programmeVersion.stamps_per_purchase ?? '1',
     spendStep: toRupees(setup.programmeVersion.spend_step_paisa) || '100', units: setup.programmeVersion.units_per_step ?? '1', cap: setup.programmeVersion.max_base_units_per_purchase,
     terms: setup.programmeVersion.terms, rewardTitle: setup.rewardVersion?.title ?? '', rewardCost: setup.rewardVersion?.unit_cost ?? '', rewardDescription: setup.rewardVersion?.description ?? '',
     rewardTerms: setup.rewardVersion?.terms ?? '', estimatedCost: toRupees(setup.rewardVersion?.estimated_cost_paisa),
   } : {});
-  const [selectedBranches, setSelectedBranches] = useState(setup.rewardVersion?.branch_ids ?? (setup.branches.length === 1 ? [setup.branches[0]!.id] : []));
-  return <form key={step} className="stack" onSubmit={async e => {
+  const [selectedBranches, setSelectedBranches] = useState(!additional ? setup.rewardVersion?.branch_ids ?? (setup.branches.length === 1 ? [setup.branches[0]!.id] : []) : []);
+  return <form key={step} className="stack programme-form" onSubmit={async e => {
     e.preventDefault(); setError(''); const f = new FormData(e.currentTarget); const d = { ...draft, ...Object.fromEntries(f) }; setDraft(d);
     if (step === 3) { setStep(4); return; }
     setPending(true);
@@ -85,23 +91,20 @@ export function ProgrammeForm({ setup }: { setup: Setup }) {
         spendStepPaisa: mode === 'points' ? rupeesToPaisa(String(d.spendStep)) : null, unitsPerStep: mode === 'points' ? String(d.units) : null,
         maxBaseUnitsPerPurchase: String(d.cap), terms: d.terms, rewardTitle: d.rewardTitle, rewardUnitCost: String(d.rewardCost), rewardDescription: d.rewardDescription,
         rewardTerms: d.rewardTerms, rewardBranchIds: f.getAll('branches'), estimatedCostPaisa: d.estimatedCost ? rupeesToPaisa(String(d.estimatedCost)) : null });
-      await mutate('/api/tenancy/programme', parsed); window.location.reload();
+      await mutate(additional ? '/api/tenancy/additional-programme' : '/api/tenancy/programme', parsed);
+      window.location.assign(additional ? `/dashboard/${setup.business.id}/programmes` : `/dashboard/${setup.business.id}`);
     } catch (err) { setError(err instanceof Error ? err.message : 'Check the form.'); setPending(false); }
-  }}><h2>Step {step}: {step === 3 ? 'Programme' : 'First reward'}</h2>
-    {step === 3 ? <><Field label="Programme name" name="name" required minLength={2} maxLength={80} defaultValue={String(draft.name ?? '')}/>
-      <label className="field">Programme type<select value={mode} onChange={e => setMode(e.target.value as 'stamps' | 'points')}><option value="stamps">Stamps</option><option value="points">Points</option></select></label>
-      <Field label="Minimum eligible spend (Rs)" name="minimum" required inputMode="decimal" defaultValue={String(draft.minimum ?? '0')}/>
-      {mode === 'stamps' ? <Field label="Stamps per qualifying purchase" name="stamps" type="number" min={1} max={10} required defaultValue={String(draft.stamps ?? '1')}/> : <><Field label="Spend step (Rs)" name="spendStep" required inputMode="decimal" defaultValue={String(draft.spendStep ?? '100')}/><Field label="Points per step" name="units" type="number" min={1} max={1000} required defaultValue={String(draft.units ?? '1')}/></>}
-      <Field label="Maximum base units per purchase" name="cap" type="number" min={1} max={100000} required defaultValue={String(draft.cap ?? '1000')}/>
-      <label className="field">Programme terms<textarea name="terms" required minLength={10} maxLength={3000} defaultValue={String(draft.terms ?? '')}/></label>
-      <p>Eligible spend is paid eligible goods after discounts, excluding tax and tips. Staff enter and attest purchases; no POS verification is implied.</p>
-    </> : <><Field label="Reward title" name="rewardTitle" required minLength={2} maxLength={80} defaultValue={String(draft.rewardTitle ?? '')}/>
-      <Field label="Required units" name="rewardCost" type="number" min={1} max={1000000} required defaultValue={String(draft.rewardCost ?? '')}/>
-      <label className="field">Description (optional)<textarea name="rewardDescription" maxLength={500} defaultValue={String(draft.rewardDescription ?? '')}/></label>
-      <label className="field">Reward terms<textarea name="rewardTerms" required minLength={10} maxLength={2000} defaultValue={String(draft.rewardTerms ?? '')}/></label>
-      <fieldset><legend>Eligible branches</legend>{setup.branches.filter(b => b.status === 'active').map(b => <label className="check-label" key={b.id}><input type="checkbox" name="branches" value={b.id} checked={selectedBranches.includes(b.id)} onChange={e => setSelectedBranches(ids => e.target.checked ? [...ids, b.id] : ids.filter(id => id !== b.id))}/>{b.name}</label>)}</fieldset>
-      <Field label="Estimated fulfillment cost (Rs, optional)" name="estimatedCost" inputMode="decimal" defaultValue={String(draft.estimatedCost ?? '')}/>
-      <Button type="button" variant="secondary" onClick={e => { setDraft(d => ({ ...d, ...Object.fromEntries(new FormData(e.currentTarget.form!)) })); setStep(3); }}>Back</Button>
+  }}><h2>{additional ? 'New programme' : `Step ${step}`}: {step === 3 ? 'Programme' : 'First reward'}</h2>
+    {step === 3 ? <ProgrammeFields mode={mode as 'stamps' | 'points'} onModeChange={setMode} values={{
+      name: String(draft.name ?? ''), minimum: String(draft.minimum ?? '0'), stamps: String(draft.stamps ?? '1'),
+      spendStep: String(draft.spendStep ?? '100'), units: String(draft.units ?? '1'), cap: String(draft.cap ?? '1000'), terms: String(draft.terms ?? ''),
+    }} onFieldChange={(field: keyof ProgrammeFieldValues, value) => setDraft(current => ({ ...current, [field]: value }))}/> : <><RewardFields values={{
+      title: String(draft.rewardTitle ?? ''), cost: String(draft.rewardCost ?? ''), description: String(draft.rewardDescription ?? ''),
+      terms: String(draft.rewardTerms ?? ''), estimate: String(draft.estimatedCost ?? ''),
+    }} branches={setup.branches.filter(b => b.status === 'active')} branchIds={selectedBranches}
+      onFieldChange={(field, value) => setDraft(current => ({ ...current, [rewardDraftFieldNames[field]]: value }))}
+      onBranchIdsChange={setSelectedBranches}/>
+      <Button type="button" variant="secondary" onClick={e => { const fields = Object.fromEntries(new FormData(e.currentTarget.form!)); setDraft(d => ({ ...d, ...fields })); setStep(3); }}>Back</Button>
     </>}
     <Button type="submit" disabled={pending}>{pending ? 'Saving…' : step === 3 ? 'Continue to reward' : 'Save programme and reward drafts'}</Button>{error && <p role="alert" className="error-text">{error}</p>}
   </form>;

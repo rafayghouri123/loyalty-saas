@@ -1,0 +1,13 @@
+export type Template = { id: string; name: string; body: string; version: number; rowVersion: number; active: boolean };
+export type Config = { businessName: string; staffId: string; role: string; marketingAvailable: boolean; templates: Template[];
+  assignees: { id: string; name: string; role: string }[]; rewards: { id: string; title: string }[]; offers: { id: string; title: string }[];
+  batches: { id: string; name: string }[]; members: { id: string; name: string; status: string }[] };
+export type Preview = { eligible: number; excluded: number; templateVersion: number; members: { membershipId: string; name: string; exclusion: string | null;
+  body: string | null; contactVersion: number; lastContactAt: string | null; recentContactWarning: boolean }[] };
+export type TaskRow = { id: string; name: string; batchName: string; state: string; assignedName: string | null; assignedId: string | null;
+  createdAt: string; openedAt: string | null; markedSentAt: string | null; lastContactAt: string | null };
+export type TaskList = { tasks: TaskRow[]; counts: { opened: number; staffMarkedSent: number }; offset: number; dataAsOf: string };
+export type TaskDetail = { id: string; name: string; membershipId: string; batchName: string; state: string; rowVersion: number; body: string | null;
+  contactStale: boolean; consent: boolean; memberActive: boolean; phone: string | null; phoneStatus: string; contactVersion: number; assignedId: string | null;
+  staffId: string; leaseOwnerId: string | null; leaseExpiresAt: string | null; openedAt: string | null; markedSentAt: string | null; marketingAvailable: boolean;
+  history: { action: string; occurredAt: string; taskId: string; note: string | null; actorName: string | null }[] };

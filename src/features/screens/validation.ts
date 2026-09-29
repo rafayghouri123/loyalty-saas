@@ -2,6 +2,8 @@ import { z } from 'zod';
 import { parsePhoneNumberFromString } from 'libphonenumber-js/min';
 import { codePointLength, rupeesToPaisa } from '../../lib/validation/primitives';
 import { allowed, visible, type Access, type Field, type Screen, type Section } from './contracts';
+import { templateError } from '../whatsapp/contracts';
+export { templateError } from '../whatsapp/contracts';
 
 export type Values = Record<string, string>;
 export function initialValues(screen: Screen): Values {
@@ -9,10 +11,6 @@ export function initialValues(screen: Screen): Values {
 }
 export function validPhone(value: string) {
   return Boolean(parsePhoneNumberFromString(value, 'PK')?.isValid());
-}
-export function templateError(value: string) {
-  const remainder = value.replace(/\{\{(first_name|business_name|reward_name|public_offer_url)\}\}/gu, '');
-  return /[{}]/u.test(remainder) ? 'Use only the four supported placeholders with matching double braces.' : undefined;
 }
 export function fieldSchema(field: Field) {
   return z.string().superRefine((raw, context) => {

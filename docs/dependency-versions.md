@@ -19,6 +19,7 @@ Verified against npm registry metadata on 2026-09-13. Node 24.21.0 LTS is pinned
 | @types/react | 19.3.0 | Development / validation |
 | @types/react-dom | 19.3.0 | Development / validation |
 | @zxing/browser | 0.2.1 | Application / worker |
+| axe-core | 4.13.0 | Development / validation |
 | clsx | 2.1.1 | Application / worker |
 | embedded-postgres | 18.4.0-beta.17 | Development / validation |
 | eslint | 10.10.0 | Development / validation |
@@ -42,6 +43,7 @@ Verified against npm registry metadata on 2026-09-13. Node 24.21.0 LTS is pinned
 | typescript | 6.0.3 | Development / validation |
 | typescript-eslint | 8.70.0 | Development / validation |
 | vitest | 5.0.0 | Development / validation |
+| workflow | 4.8.9 | Application / worker |
 | zod | 4.6.4 | Application / worker |
 
 TypeScript 7.0.2 was the registry latest, but typescript-eslint 8.70.0 requires TypeScript <6.1.0. Selected stable 6.0.3. The current eslint-config-next preset depends on older React/import/accessibility plugins whose peers exclude ESLint 10. Use supported ESLint 10.10.0, typescript-eslint 8.70.0 and the official Next.js plugin directly. No legacy-peer-deps setting is enabled. Dependency tree verification must pass without invalid peers. Accessibility browser checks remain separately required.
@@ -51,3 +53,7 @@ The development-only embedded-postgres launcher has no stable releases. Its pinn
 Inter is self-hosted from @fontsource/inter under SIL Open Font License 1.1 (license included in the installed package). All direct versions are exact and production dependency vulnerabilities were checked with npm audit. A clean scan is not a complete application security audit.
 
 References: [Node release status](https://nodejs.org/en/about/previous-releases), [Next.js PWA guidance](https://nextjs.org/docs/app/guides/progressive-web-apps), [Supabase SSR](https://supabase.com/docs/guides/auth/server-side/creating-a-client), [pg-boss](https://github.com/timgit/pg-boss), [embedded PostgreSQL](https://github.com/leinelissen/embedded-postgres). Package registry metadata is available at https://registry.npmjs.org/<package>/<version>.
+
+Vercel worker addition verified on 2026-09-27: workflow 4.8.9 is the registry stable release (5.x remains beta). Compatible transitive overrides pin @workflow/core nanoid to 5.1.16 and undici to 7.30.0; npm audit reports zero vulnerabilities. Workflow 4.x state is retained in iad1 while Function code runs in the configured sin1 region. See [Vercel worker operations](vercel-worker.md).
+
+Phase 9 addition verified on 2026-09-28: axe-core 4.13.0 is an exact development-only dependency under MPL-2.0. The complete 1,093-entry lockfile license inventory and package notice review are in [license inventory](license-inventory.md); npm audit found zero vulnerabilities on this date. Automated accessibility findings do not replace physical assistive-technology checks.

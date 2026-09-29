@@ -114,6 +114,36 @@ details p { padding-top: 12px; color: var(--color-muted); }
 .customer-navigation { position: fixed; z-index: 20; bottom: 0; left: 0; right: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; padding: 8px max(8px, calc((100vw - 720px) / 2)) calc(8px + env(safe-area-inset-bottom, 0px)); background: white; border-top: 1px solid var(--color-border); }
 .customer-navigation a { display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 4px; min-height: 52px; border-radius: 8px; color: var(--color-muted); text-decoration: none; font-size: 12px; }
 .customer-navigation a[aria-current="page"] { color: var(--color-primary); background: #e8efe6; font-weight: 700; }
+.business-shell { max-width: 1120px; padding-bottom: 64px; }
+.business-header { min-height: 96px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; padding-block: 20px; border-bottom: 1px solid var(--color-border); }
+.business-header-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; }
+.business-heading { padding-block: 40px 28px; max-width: 720px; }
+.business-heading h1 { font-size: clamp(30px, 4vw, 42px); margin-bottom: 16px; }
+.business-heading p:last-child { margin-bottom: 0; }
+.business-eyebrow { color: var(--color-primary); font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 12px; }
+.business-onboarding { display: grid; grid-template-columns: minmax(240px, .8fr) minmax(0, 1.5fr); align-items: start; gap: 28px; }
+.business-onboarding-guide { padding: 32px; border-radius: 20px; color: #f5faf4; background: #164b32; }
+.business-onboarding-guide h2 { font-size: 32px; margin-block: 24px 16px; }
+.business-onboarding-guide p, .business-onboarding-guide li span { color: #d6e8dc; font-size: 14px; }
+.business-onboarding-guide ol { padding-left: 24px; margin-block: 28px; }
+.business-onboarding-guide li { padding-left: 8px; margin-bottom: 22px; }
+.business-onboarding-guide li strong, .business-onboarding-guide li span { display: block; }
+.business-onboarding-guide li span { margin-top: 4px; }
+.business-guide-note { border-top: 1px solid #47755b; padding-top: 20px; margin-bottom: 0; }
+.business-card-icon { display: inline-flex; width: 48px; height: 48px; align-items: center; justify-content: center; border: 1px solid currentColor; border-radius: 14px; }
+.business-onboarding-form, .business-workspace-card { min-width: 0; padding: 32px; border: 1px solid #dce1d6; border-radius: 20px; background: white; box-shadow: 0 8px 28px #18382705; }
+.business-onboarding-form .field { display: block; }
+.business-security { display: flex; align-items: flex-start; gap: 12px; background: #eff5ee; border: 1px solid #cbdcc8; padding: 20px; border-radius: 12px; margin-bottom: 28px; }
+.business-security > svg { flex-shrink: 0; color: var(--color-primary); }
+.business-security h2 { font-size: 18px; margin-bottom: 8px; }
+.business-security p { font-size: 14px; }
+.business-workspaces { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 24px; }
+.business-workspace-card { display: flex; flex-direction: column; align-items: flex-start; gap: 24px; }
+.business-workspace-card .business-card-icon { color: var(--color-primary); background: #eff5ee; border-color: #cbdcc8; }
+.business-workspace-card h2 { font-size: 26px; margin-block: 14px 10px; overflow-wrap: anywhere; }
+.business-workspace-card .button { margin-top: auto; }
+.business-tools { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 28px; }
+@media (max-width: 760px) { .business-onboarding { grid-template-columns: minmax(0, 1fr); } .business-onboarding-form { grid-row: 1; } .business-onboarding-guide { padding: 24px; } .business-onboarding-guide h2 { font-size: 26px; } .business-heading { padding-top: 28px; } .business-onboarding-form, .business-workspace-card { padding: 22px; } .business-security { padding: 16px; } .business-security .button { text-align: center; } }
 @media (max-width: 1023px) { .site-nav { display:none; } .hero { gap:32px; padding-block:48px; } .illustration { padding:24px; } .loyalty-card { padding:20px; } .feature-strip { flex-wrap:wrap; } }
 @media (max-width: 639px) { .container { width:calc(100% - 32px); } .site-header { min-height:76px; gap:12px; } .site-header .button { padding:8px 12px; font-size:12px; } .wordmark { font-size:16px; } .hero { grid-template-columns:1fr; padding-top:36px; gap:32px; } .hero h1 { font-size:42px; } .hero-copy { font-size:16px; } .illustration { max-width:420px; width:100%; margin:auto; } .three-grid { grid-template-columns:1fr; } .feature-strip { display:grid; grid-template-columns:1fr 1fr; font-size:11px; } .section { padding-block:48px; } .section h2 { font-size:28px; } .pricing-panel { display:block; padding:24px; } .pricing-panel .button { margin-top:24px; } .site-footer { align-items:flex-start; flex-direction:column; } .auth-card,.state-panel { padding:24px; } }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } *,*::before,*::after { animation:none !important; transition:none !important; } }
@@ -126,6 +156,7 @@ input:disabled, select:disabled, textarea:disabled { background: #f3f4f1; color:
 input[aria-invalid="true"], textarea[aria-invalid="true"], select[aria-invalid="true"], fieldset[aria-invalid="true"] { border: 2px solid var(--color-error); }
 .field textarea, .field select { width: 100%; }
 .field { min-width: 0; }
+.manual-followups label.field { display: block; }
 .field input[type="checkbox"], .check-label input { width: 20px; height: 20px; min-height: 20px; accent-color: var(--color-primary); flex-shrink: 0; }
 .checkbox-field label, .choice-grid label, .check-label { display: flex; align-items: center; gap: 12px; min-height: 44px; }
 .checkbox-field .microcopy { white-space: nowrap; }
@@ -170,6 +201,7 @@ input[aria-invalid="true"], textarea[aria-invalid="true"], select[aria-invalid="
 .readout-grid dd { font-size: 16px; margin: 8px 0 0; }
 .table-scroll { width: 100%; overflow: auto; margin-top: 20px; border: 1px solid var(--color-border); border-radius: 8px; }
 .stack { display: grid; gap: 20px; min-width: 0; }
+.programme-form, .programme-detail { max-width: 720px; }
 .stack fieldset { min-width: 0; }
 .stack input, .stack select, .stack textarea { max-width: 100%; }
 .stack textarea { min-height: 100px; }
@@ -231,3 +263,25 @@ th { font-size: 12px; background: #f6f7f3; font-weight: 600; }
   .hours-interval label { flex: 1 1 100%; }
   .preview-toolbar select { max-width: 100%; }
 }
+/* Reports keep charts optional and wide tables inside a keyboard-scrollable region. */
+.reports-view { min-width: 0; }
+.report-filters { display: flex; flex-wrap: wrap; gap: 1rem; align-items: end; }
+.report-filters label { display: grid; gap: .4rem; min-width: 140px; max-width: 100%; flex: 1 1 160px; }
+.report-filters input, .report-filters select { width: 100%; min-height: 44px; padding: .5rem; border: 1px solid #D1D5DB; border-radius: 8px; background: white; }
+.report-metrics { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,220px),1fr)); gap: 1rem; }
+.report-metrics dt { color: #4B5563; }
+.report-metrics dd { font-size: 1.4rem; font-weight: 600; margin: .5rem 0 0; overflow-wrap: anywhere; }
+.report-table { width: 100%; overflow: auto; margin: 1rem 0; border: 1px solid #D1D5DB; border-radius: 8px; }
+.report-table table { width: 100%; border-collapse: collapse; }
+.report-table caption { text-align: left; padding: 1rem; font-weight: 600; }
+.report-table th,.report-table td { padding: .75rem; text-align: left; border-bottom: 1px solid #D1D5DB; min-width: 120px; overflow-wrap: anywhere; }
+.report-column { display: flex; align-items: center; gap: .6rem; min-height: 44px; }
+.report-column input { width: 20px; height: 20px; }
+.platform-usage { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr)); gap:1rem; }
+.platform-usage dd { margin:.4rem 0; font-size:1.2rem; font-weight:600; }
+.preserve-lines { white-space:pre-line; }
+.container .table-scroll { width:100%; max-width:100%; overflow:auto; }
+.container .table-scroll th,.container .table-scroll td { padding:.75rem; text-align:left; border-bottom:1px solid #D1D5DB; min-width:110px; overflow-wrap:anywhere; }
+.container .screen-panel { overflow-wrap:anywhere; }
+.platform-table { min-width: 58rem; }
+.platform-table button { min-width: 7rem; white-space: nowrap; }

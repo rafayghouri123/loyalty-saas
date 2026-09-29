@@ -3,7 +3,7 @@ import { bootstrapSchema, joinSchema, consentSchema, phone, profileSchema } from
 import { sanitizeImage } from '../../src/worker/media';
 import sharp from 'sharp';
 import { signupArtwork, signupDestination } from '../../src/features/tenancy/signup-assets';
-import { BinaryBitmap, HybridBinarizer, RGBLuminanceSource, QRCodeReader } from '@zxing/library';
+import { BinaryBitmap, HybridBinarizer, RGBLuminanceSource, QRCodeReader, DecodeHintType } from '@zxing/library';
 
 describe('phase 2 contracts', () => {
   it('generates escaped printable signage with a decodable public branch signup QR', async () => {
@@ -14,7 +14,9 @@ describe('phase 2 contracts', () => {
     const png=await signupArtwork(input,'png');
     const {data,info}=await sharp(png).extract({left:150,top:360,width:500,height:500}).greyscale().raw().toBuffer({resolveWithObject:true});
     const source=new RGBLuminanceSource(new Uint8ClampedArray(data),info.width,info.height);
-    expect(new QRCodeReader().decode(new BinaryBitmap(new HybridBinarizer(source))).getText()).toBe(destination);
+    // This extraction is already an isolated square barcode; skip scene detection,
+    // which can misidentify finder-like random URL patterns as a second code.
+    expect(new QRCodeReader().decode(new BinaryBitmap(new HybridBinarizer(source)),new Map([[DecodeHintType.PURE_BARCODE,true]])).getText()).toBe(destination);
   }, 20000);
   it('normalizes real Pakistani numbers and rejects invalid optional input', () => {
     expect(phone.parse('0300 1234567')).toBe('+923001234567');

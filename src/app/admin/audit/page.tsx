@@ -1,3 +1,4 @@
-import { RouteShell } from '@/features/screens/route-shell';
-export const dynamic = 'force-dynamic';
-export default function Page() { return <RouteShell screenId="A06" />; }
+import {Admin} from '@/features/platform/admin-ui';
+import {adminData} from '@/features/platform/data';
+export const dynamic='force-dynamic';
+export default async function Page(){return <main id="main" className="container"><Admin kind="audit" initial={await adminData('audit')}/></main>;}

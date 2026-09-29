@@ -1,0 +1,47 @@
+name: Validation
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      APP_ENV: test
+      NEXT_PUBLIC_APP_URL: http://127.0.0.1:3100
+      LIVE_PUSH_ENABLED: 'false'
+      AUTH_EMAIL_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24.21.0
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run licenses:check
+      - run: npm audit --audit-level=high
+      - run: npm run test:monitor
+      - run: npm ci --prefix monitoring/vercel
+      - run: npm run monitor:test
+      - run: npm run monitor:build
+      - run: npm run test:integration
+      - run: npm run test:restore
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - run: npm run security:bundles
+      - run: docker build -f Dockerfile.worker -t loyalty-worker:ci .
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: validation-evidence
+          path: |
+            test-results/
+            .local/phase9-security-inventory.json
+            .local/phase9-licenses.json
+          retention-days: 14

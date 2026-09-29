@@ -1,5 +1,7 @@
 # Phase 0 deployment settings
 
+Phase 8 adds the server-only `STORAGE_SERVICE_ROLE_KEY` for authorized private payment proofs. Browser uploads still use exact user grants; account/report downloads use bounded encrypted links. The user's subsequent Vercel worker request adds a restricted `WORKER_DATABASE_URL`, `CRON_SECRET` and enabled media/export/privacy flags to the intended Vercel staging deployment. The migration credential and workstation paths remain excluded. Use verified inline CA configuration. See [Vercel worker hosting](vercel-worker.md) for the changed execution model, deployment controls and actual Hobby capacity gate.
+
 Use a dedicated staging Supabase/Firebase environment for verification. The current user-supplied HTTPS testing origin is `https://loyalty-saas-three.vercel.app`. Its Vercel Production deployment target does not establish production readiness. Keep preview deployments isolated from live customer data.
 
 ## Vercel web application
@@ -29,11 +31,13 @@ Use the existing restricted web gateway transaction-pooler URL. `DATABASE_CA_CER
 
 Firebase web values and VAPID must belong to the same configured project. Copy the existing encryption key and its ID through provider secret stores to both web and worker; independently generating a worker key will prevent it from decrypting web-created challenges. No secret gets a NEXT_PUBLIC prefix. Google client credentials belong in Supabase's Google provider settings.
 
+The isolated staging Vercel target has `AUTH_EMAIL_FROM="Cafe Loyalty <no-reply@loyalty-cafe.shop>"` on the verified Resend sending domain. This establishes the sender identity. `AUTH_EMAIL_ENABLED=false` remains in effect; email sign-in also remains disabled until a server-only Resend API key is configured for the sending runtime, real inbox delivery succeeds, and the direct Auth bypass controls pass. The address is a sending identity; do not assume its mailbox receives replies.
+
 The notification page requires all its configuration, not just the enable flag. A configuration-enabled button does not prove provider delivery or a running worker.
 
 ## Separate persistent Node worker
 
-Select a persistent process host; the worker is not a Vercel function. The host must install the repository's pinned Node version/dependencies, compile the worker, supervise its start command, and restart it after failures.
+This is the alternative daemon deployment. The current requested host uses [bounded Vercel Workflows consumers](vercel-worker.md). If switching to a persistent process host, first stop the Vercel controller; install pinned Node/dependencies, compile, supervise the start command and verify restart.
 
 ```dotenv
 APP_ENV=staging
